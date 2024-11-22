@@ -70,6 +70,17 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (id string
 
 	ctx = context.WithValue(ctx, "tx", tx)
 
+	oldEvent, err := s.Find(ctx, in.EkpId)
+	if err != nil {
+		log.Error("failed find event", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+
+	if oldEvent != nil {
+		s.unstale(ctx, oldEvent.Id)
+		return oldEvent.Id, nil
+	}
+
 	var stId, sstId string
 	st, err := s.findSportType(ctx, in.SportType)
 	if err != nil {
@@ -117,7 +128,7 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (id string
 		}
 	}
 
-	eId, err := s.save(ctx, &saveEvent{
+	eid, err := s.save(ctx, &saveEvent{
 		ekpId:        in.EkpId,
 		name:         in.Name,
 		description:  in.Description,
@@ -130,17 +141,22 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (id string
 		return "", fmt.Errorf("%s: %w", fn, err)
 	}
 
-	if err := s.saveEventDate(ctx, eId, in.Dates); err != nil {
+	if err := s.saveEventDate(ctx, eid, in.Dates); err != nil {
 		log.Error("failed save event dates", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", fn, err)
 	}
 
-	if err := s.saveParticipantsRequirements(ctx, eId, in.ParticipantRequirements); err != nil {
+	if err := s.saveParticipantsRequirements(ctx, eid, in.ParticipantRequirements); err != nil {
 		log.Error("failed save participants requirements", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", fn, err)
 	}
 
-	return eId, nil
+	if err := s.saveEventStaleInfo(ctx, eid, false); err != nil {
+		log.Error("failed save event stale info", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return eid, nil
 }
 
 func (s *Storage) findSportType(ctx context.Context, slug string) (*sportType, error) {
@@ -404,6 +420,39 @@ func (s *Storage) saveParticipantsRequirements(ctx context.Context, eventId stri
 			qb = qb.Values(eventId, r.Gender, nil, nil)
 		}
 	}
+
+	sql, args, err := qb.ToSql()
+	if err != nil {
+		log.Error("failed build sql", sl.Err(err))
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	log.Debug("exectuing sql", slog.String("sql", sql), slog.Any("args", args))
+
+	if _, err := conn.Exec(ctx, sql, args...); err != nil {
+		var pge *pgconn.PgError
+		if errors.As(err, &pge) {
+			log.Error("failed exec query", sl.PgError(pge))
+		} else {
+			log.Error("failed exec query", sl.Err(err))
+		}
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) saveEventStaleInfo(ctx context.Context, eventId string, stale bool) error {
+	fn := "EventStorage.saveEventStaleInfo"
+	log := s.l.With(sl.Method(fn))
+
+	conn := ctx.Value("tx").(pgx.Tx)
+
+	qb := sq.
+		Insert(pg.EVENT_STALE).
+		Columns("event_id", "is_stale").
+		Values(eventId, stale).
+		PlaceholderFormat(sq.Dollar)
 
 	sql, args, err := qb.ToSql()
 	if err != nil {

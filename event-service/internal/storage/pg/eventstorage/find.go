@@ -24,13 +24,15 @@ func (r *Storage) Find(ctx context.Context, id string) (*domain.EventInfo, error
 		log.Error("failed to acquire connection", sl.Err(err))
 		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
+	defer conn.Release()
 
 	qb := sq.
-		Select("e.id, e.ekp_id, e.name, e.description, st.sport_type, sst.sport_subtype, ed.date_from, ed.date_to, e.location, e.participants").
+		Select("e.id, e.ekp_id, st.sport_type, sst.sport_subtype, e.name, e.description, e.location, e.participants, ed.date_from, ed.date_to").
 		From(fmt.Sprintf("%s e", pg.EVENTS)).
-		InnerJoin(fmt.Sprintf("%s ed e.id = ed.id", pg.EVENT_DATES)).
-		InnerJoin(fmt.Sprintf("%s sst e.sport_subtype_id = sst.id", pg.SPORT_SUBTYPES)).
-		InnerJoin(fmt.Sprintf("%s st sst.sport_type_id = st.id", pg.SPORT_TYPES)).
+		InnerJoin(fmt.Sprintf("%s sst on e.sport_subtype_id = sst.id", pg.SPORT_SUBTYPES)).
+		InnerJoin(fmt.Sprintf("%s st on sst.sport_type_id = st.id", pg.SPORT_TYPES)).
+		InnerJoin(fmt.Sprintf("%s ed on ed.event_id = e.id", pg.EVENT_DATES)).
+		OrderBy("ed.date_from ASC").
 		PlaceholderFormat(sq.Dollar)
 
 	if _, err := uuid.Parse(id); err != nil {
@@ -51,14 +53,14 @@ func (r *Storage) Find(ctx context.Context, id string) (*domain.EventInfo, error
 	if err := conn.QueryRow(ctx, sql, args...).Scan(
 		&e.Id,
 		&e.EkpId,
-		&e.Name,
-		&e.Description,
 		&e.SportType,
 		&e.SportSubtype,
-		&e.Dates.From,
-		&e.Dates.To,
+		&e.Name,
+		&e.Description,
 		&e.Location,
 		&e.Participants,
+		&e.Dates.From,
+		&e.Dates.To,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil

@@ -15,6 +15,10 @@ type EventProvider interface {
 	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error
 }
 
+type EventManager interface {
+	StaleAll(ctx context.Context) error
+}
+
 type EventLoader interface {
 	Load(ctx context.Context, in *domain.EventLoadInfo) (string, error)
 }
@@ -28,15 +32,17 @@ type Service struct {
 	cfg                   *config.Config
 	ep                    EventProvider
 	el                    EventLoader
+	em                    EventManager
 	notificationPublisher NotificationPublisher
 }
 
-func New(cfg *config.Config, ep EventProvider, el EventLoader, np NotificationPublisher) *Service {
+func New(cfg *config.Config, ep EventProvider, el EventLoader, np NotificationPublisher, em EventManager) *Service {
 	return &Service{
 		l:                     slog.With(sl.Module("EventService")),
 		cfg:                   cfg,
 		ep:                    ep,
 		el:                    el,
+		em:                    em,
 		notificationPublisher: np,
 	}
 }
@@ -81,6 +87,18 @@ func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 	err := s.ep.List(ctx, chEvents, filters)
 	if err != nil {
 		log.Error("failed to list events", sl.Err(err))
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return nil
+}
+
+func (s *Service) Stale(ctx context.Context) error {
+	fn := "EventService.Stale"
+	log := s.l.With(sl.Method(fn))
+
+	if err := s.em.StaleAll(ctx); err != nil {
+		log.Error("failed to stale events", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)
 	}
 

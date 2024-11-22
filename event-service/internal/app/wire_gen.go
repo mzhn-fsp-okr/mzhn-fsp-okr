@@ -45,7 +45,7 @@ func New() (*App, func(), error) {
 		return nil, nil, err
 	}
 	rabbitMQ := amqp.New(configConfig, channel)
-	service := eventservice.New(configConfig, storage, storage, rabbitMQ)
+	service := eventservice.New(configConfig, storage, storage, rabbitMQ, storage)
 	authClient, err := _authpb(configConfig)
 	if err != nil {
 		cleanup2()
