@@ -1,0 +1,11 @@
+include:
+  - auth.yaml
+  - event-service.yaml
+
+services:
+  nginx:
+    image: nginx:1-alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
