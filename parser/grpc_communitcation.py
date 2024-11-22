@@ -3,25 +3,31 @@ import event_service_pb2
 import event_service_pb2_grpc
 from typing import List
 from lib import SportEvent
-
 from config import GRPC_SERVER_ADDRESS
+from logger import logging
 
-
-# gRPC Client Setup
 def get_grpc_stub():
-    # Create a gRPC channel
+    """
+    Создает и возвращает gRPC-клиентский объект (stub) для взаимодействия с сервером.
+    """
     channel = grpc.insecure_channel(GRPC_SERVER_ADDRESS)
-    # Create a stub (client)
     stub = event_service_pb2_grpc.EventServiceStub(channel)
     return stub
 
-
 def send_events_via_grpc(events: List[SportEvent]):
+    """
+    Отправляет список спортивных событий на gRPC-сервер.
+    
+    :param events: Список объектов SportEvent для отправки.
+    """
     stub = get_grpc_stub()
 
     def generate_load_requests():
+        """
+        Генератор для создания и отправки LoadRequest сообщений на сервер.
+        """
         for event in events:
-            load_request = event_service_pb2.LoadRequest(
+            yield event_service_pb2.LoadRequest(
                 info=event_service_pb2.EventInfo(
                     ekpId=event.id,
                     sportType=event.sport_type,
@@ -29,7 +35,8 @@ def send_events_via_grpc(events: List[SportEvent]):
                     name=event.name,
                     description=event.description,
                     dates=event_service_pb2.DateRange(
-                        date_from=event.dates.from_, date_to=event.dates.to
+                        date_from=event.dates.from_, 
+                        date_to=event.dates.to
                     ),
                     location=event.location,
                     participants=event.participants,
@@ -43,11 +50,11 @@ def send_events_via_grpc(events: List[SportEvent]):
                     ],
                 )
             )
-            yield load_request
 
     try:
-        print("Отправка событий на gRPC сервер...")
+        logging.info("Начало отправки событий на gRPC сервер...")
         response = stub.Load(generate_load_requests())
-        print(f"Сохранено событий на сервере: {response.saved}")
+        logging.info(f"Сохранено событий на сервере: {response.saved}")
     except grpc.RpcError as e:
-        print(f"gRPC ошибка: {e.code()} - {e.details()}")
+        # Обработка исключений с выводом кода ошибки и подробностей
+        logging.error(f"gRPC ошибка: {e.code()} - {e.details()}")
