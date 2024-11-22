@@ -35,32 +35,32 @@ func (s *Server) Load(stream espb.EventService_LoadServer) error {
 			return err
 		}
 
-		startDate, err := time.Parse("02.01.2006", req.Info.Dates.DateFrom)
+		startDate, err := time.Parse("02.01.2006", req.Dates.DateFrom)
 		if err != nil {
 			log.Error("failed to parse date", sl.Err(err))
 			return err
 		}
 
-		endDate, err := time.Parse("02.01.2006", req.Info.Dates.DateTo)
+		endDate, err := time.Parse("02.01.2006", req.Dates.DateTo)
 		if err != nil {
 			log.Error("failed to parse date", sl.Err(err))
 			return err
 		}
 
-		log.Debug("loading event", slog.Any("event", req.Info))
+		log.Debug("loading event", slog.Any("event", req))
 		if _, err := s.es.Load(stream.Context(), &domain.EventLoadInfo{
-			EkpId:        req.Info.EkpId,
-			SportType:    req.Info.SportType,
-			SportSubtype: req.Info.SportSubtype,
-			Name:         req.Info.Name,
-			Description:  req.Info.Description,
+			EkpId:        req.EkpId,
+			SportType:    req.SportType,
+			SportSubtype: req.SportSubtype,
+			Name:         req.Name,
+			Description:  req.Description,
 			Dates: domain.DateRange{
 				From: startDate,
 				To:   endDate,
 			},
-			Location:     req.Info.Location,
-			Participants: int(req.Info.Participants),
-			ParticipantRequirements: lo.Map(req.Info.ParticipantRequirements, func(r *espb.ParticipantRequirements, _ int) domain.ParticipantRequirements {
+			Location:     req.Location,
+			Participants: int(req.Participants),
+			ParticipantRequirements: lo.Map(req.ParticipantRequirements, func(r *espb.ParticipantRequirements, _ int) domain.ParticipantRequirements {
 				pr := domain.ParticipantRequirements{
 					Gender: r.Gender,
 					MinAge: r.MinAge,
