@@ -30,10 +30,19 @@ message EventInfo {
   string location = 7;
   int32 participants = 8;
   repeated ParticipantRequirements participantRequirements = 9;
+  string id = 10;
 }
 
 message LoadRequest {
-  EventInfo info = 1;
+  string ekpId = 1;
+  string sportType = 2;
+  string sportSubtype = 3;
+  string name = 4;
+  string description = 5;
+  DateRange dates = 6;
+  string location = 7;
+  int32 participants = 8;
+  repeated ParticipantRequirements participantRequirements = 9;
 }
 
 message LoadResponse {
