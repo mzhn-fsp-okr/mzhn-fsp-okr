@@ -34,6 +34,21 @@ type Grpc struct {
 	UseReflection bool   `env:"GRPC_USE_REFLECTION" env-default:"false"`
 }
 
+type Amqp struct {
+	Host string `env:"AMQP_HOST" env-required:"true"`
+	Port int    `env:"AMQP_PORT" env-required:"true"`
+	User string `env:"AMQP_USER" env-required:"true"`
+	Pass string `env:"AMQP_PASS" env-required:"true"`
+
+	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-required:"true"`
+
+	NewEventsQueue string `env:"AMQP_NEW_EVENTS_EVENTS_QUEUE" env-required:"true"`
+}
+
+func (am *Amqp) ConnectionString() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d", am.User, am.Pass, am.Host, am.Port)
+}
+
 type Pg struct {
 	Host string `env:"PG_HOST" env-required:"true"`
 	Port int    `env:"PG_PORT" env-required:"true"`
@@ -60,6 +75,7 @@ type Config struct {
 	App         App
 	Http        Http
 	Grpc        Grpc
+	Amqp        Amqp
 	Pg          Pg
 	AuthService AuthService
 }
