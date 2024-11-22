@@ -1,11 +1,11 @@
-
 import grpc
 import event_service_pb2
 import event_service_pb2_grpc
 from typing import List
 from lib import SportEvent
 
-GRPC_SERVER_ADDRESS = '10.244.0.13:7001'
+from config import GRPC_SERVER_ADDRESS
+
 
 # gRPC Client Setup
 def get_grpc_stub():
@@ -15,9 +15,10 @@ def get_grpc_stub():
     stub = event_service_pb2_grpc.EventServiceStub(channel)
     return stub
 
+
 def send_events_via_grpc(events: List[SportEvent]):
     stub = get_grpc_stub()
-    
+
     def generate_load_requests():
         for event in events:
             load_request = event_service_pb2.LoadRequest(
@@ -28,19 +29,18 @@ def send_events_via_grpc(events: List[SportEvent]):
                     name=event.name,
                     description=event.description,
                     dates=event_service_pb2.DateRange(
-                        date_from=event.dates.from_,
-                        date_to=event.dates.to
+                        date_from=event.dates.from_, date_to=event.dates.to
                     ),
                     location=event.location,
                     participants=event.participants,
                     participantRequirements=[
                         event_service_pb2.ParticipantRequirements(
-                            gender=info['gender'],
-                            min_age=info['age'][0],
-                            max_age=info['age'][1],
+                            gender=info["gender"],
+                            min_age=info["age"][0],
+                            max_age=info["age"][1],
                         )
                         for info in event.gender_age_info
-                    ]
+                    ],
                 )
             )
             yield load_request

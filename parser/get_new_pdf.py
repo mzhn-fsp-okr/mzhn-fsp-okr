@@ -1,6 +1,5 @@
 import re
 import time
-import logging
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -9,47 +8,48 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Настройка логирования
-logging.basicConfig(
-    level=logging.ERROR,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("parser.log", encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+from logger import logging
+
 
 # Настройка Selenium
 def init_driver():
     options = Options()
-    # options.headless = True
-    options.add_argument("--window-size=1920,1080")
     options.add_argument("--headless=new")
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    return webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), options=options
+    )
+
 
 # Открытие URL
 def open_page(driver, url):
     logging.info(f"Открываем страницу: {url}")
     driver.get(url)
 
+
 # Поиск заголовка "II часть ЕКП"
 def find_ii_part_header(driver):
     try:
-        return WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-            (By.XPATH, "//h2[contains(text(), 'II часть ЕКП')]")
-        ))
+        return WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//h2[contains(text(), 'II часть ЕКП')]")
+            )
+        )
     except Exception as e:
         logging.error(f"Не удалось найти заголовок 'II часть ЕКП': {e}")
         driver.quit()
         exit()
 
+
 # Поиск контейнера для "II часть ЕКП"
 def find_ii_part_container(header_element):
     try:
-        return header_element.find_element(By.XPATH, "./ancestor::div[@class='wrapper']")
+        return header_element.find_element(
+            By.XPATH, "./ancestor::div[@class='wrapper']"
+        )
     except Exception as e:
         logging.error(f"Не удалось найти контейнер для 'II часть ЕКП': {e}")
         exit()
+
 
 # Поиск всех каталогов
 def find_year_containers(container):
@@ -59,12 +59,16 @@ def find_year_containers(container):
         logging.error(f"Не удалось найти годовые каталоги: {e}")
         exit()
 
+
 # Обработка каталога
 def process_catalog(container, index):
     try:
         is_expanded = False
         try:
-            container.find_element(By.XPATH, "./following-sibling::div[contains(@class, 'select-anymation-show')]")
+            container.find_element(
+                By.XPATH,
+                "./following-sibling::div[contains(@class, 'select-anymation-show')]",
+            )
             is_expanded = True
             logging.info(f"Каталог {index} уже развернут")
         except:
@@ -83,6 +87,7 @@ def process_catalog(container, index):
         logging.error(f"Ошибка при обработке каталога {index}: {e}")
         return []
 
+
 # Извлечение ссылок из файлов
 def extract_link(file_items, index):
     pdf_links = set()
@@ -90,7 +95,10 @@ def extract_link(file_items, index):
         try:
             text_elem = file_item.find_element(By.TAG_NAME, "p")
 
-            if "Единый календарный план межрегиональных, всероссийских и международных физкультурных мероприятий и спортивных мероприятий" not in text_elem.text:
+            if (
+                "Единый календарный план межрегиональных, всероссийских и международных физкультурных мероприятий и спортивных мероприятий"
+                not in text_elem.text
+            ):
                 continue
 
             text = text_elem.text
@@ -103,21 +111,25 @@ def extract_link(file_items, index):
             update_date = dates[0]
 
             for link in file_item.find_elements(By.TAG_NAME, "a"):
-                href = link.get_attribute('href')
-                if href and href.endswith('.pdf'):
-                    logging.info(f"Найдена ссылка: {href}")                    
+                href = link.get_attribute("href")
+                if href and href.endswith(".pdf"):
+                    logging.info(f"Найдена ссылка: {href}")
                     return update_date, href
 
         except Exception as e:
-            logging.error(f"Ошибка при обработке file-item {file_index} в каталоге {index}: {e}")
+            logging.error(
+                f"Ошибка при обработке file-item {file_index} в каталоге {index}: {e}"
+            )
     return pdf_links
+
 
 # Сохранение ссылок в файл
 def save_links(pdf_links, filename):
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, "w", encoding="utf-8") as f:
         for link in pdf_links:
             f.write(f"{link}\n")
     logging.info(f"Ссылки сохранены в файл '{filename}'")
+
 
 def get_link():
     driver = init_driver()
@@ -127,15 +139,14 @@ def get_link():
 
     ii_part_header = find_ii_part_header(driver)
     ii_part_container = find_ii_part_container(ii_part_header)
-    
+
     year_containers = find_year_containers(ii_part_container)
     container = year_containers[0]
-    
+
     file_items = process_catalog(container, 1)
     update_date, link = extract_link(file_items, 1)
 
     return update_date, link
-
 
 
 # Основной процесс
@@ -151,7 +162,9 @@ def main():
         ii_part_container = find_ii_part_container(ii_part_header)
 
         year_containers = find_year_containers(ii_part_container)
-        logging.info(f"Найдено {len(year_containers)} годовых каталогов в 'II части ЕКП'")
+        logging.info(
+            f"Найдено {len(year_containers)} годовых каталогов в 'II части ЕКП'"
+        )
 
         year_containers = year_containers[:1]  # Ограничиваем для теста
 
@@ -160,11 +173,12 @@ def main():
             links = extract_link(file_items, index)
             pdf_links.update(links)
 
-        save_links(pdf_links, 'pdf_links_II_ECP.txt')
+        save_links(pdf_links, "pdf_links_II_ECP.txt")
 
     finally:
         driver.quit()
         logging.info("Браузер закрыт")
+
 
 if __name__ == "__main__":
     main()

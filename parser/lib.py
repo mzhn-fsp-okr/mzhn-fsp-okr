@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field, asdict
 
+
 @dataclass
 class DatesRange:
     from_: str = ""
     to: str = ""
-    
+
     def __str__(self) -> str:
         return f"{self.from_} - {self.to}"
+
 
 @dataclass
 class SportEvent:
@@ -36,16 +38,13 @@ location: {self.location}
 participants: {self.participants}
 page: {self.page_number}
 order: {self.event_order}"""
-    
+
 
 def sport_event_to_dict(event: SportEvent) -> dict:
     event_dict = asdict(event)
-    
-    if 'dates' in event_dict:
-        dates = event_dict['dates']
-        event_dict['dates'] = {
-            'from': dates['from_'],
-            'to': dates['to']
-        }
-    
+
+    if "dates" in event_dict:
+        dates = event_dict["dates"]
+        event_dict["dates"] = {"from": dates["from_"], "to": dates["to"]}
+
     return event_dict
