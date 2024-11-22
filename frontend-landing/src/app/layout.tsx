@@ -12,6 +12,10 @@ export const metadata: Metadata = {
     default: "Твой Спорт",
   },
   description: "Твой Спорт - Спортивный график",
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
