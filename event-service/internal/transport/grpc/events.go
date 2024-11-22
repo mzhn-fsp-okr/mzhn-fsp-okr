@@ -3,6 +3,7 @@ package grpc
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"mzhn/event-service/internal/domain"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
@@ -22,6 +23,8 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 		if err != nil {
 			return err
 		}
+
+		log.Debug("received event request", slog.Any("request", req))
 
 		event, err := s.es.Find(stream.Context(), req.Id)
 		if err != nil {
@@ -59,6 +62,8 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 				}),
 			},
 		}
+
+		log.Debug("sending event response", slog.Any("response", response))
 		if err := stream.Send(response); err != nil {
 			return err
 		}

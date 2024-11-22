@@ -4,8 +4,6 @@ services:
     restart: unless-stopped
     build:
       context: ../event-service/
-    env_file:
-      - .env
     environment:
       WAIT_HOSTS: pg-es:5432
 
@@ -14,6 +12,9 @@ services:
       PG_NAME: ${EVENT_SERVICE_PG_NAME}
       PG_USER: ${EVENT_SERVICE_PG_USER}
       PG_PASS: ${EVENT_SERVICE_PG_PASS}
+
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_PORT: 7000
 
       AMQP_HOST: rmq
 
