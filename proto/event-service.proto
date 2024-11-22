@@ -14,8 +14,8 @@ message DateRange {
   string date_to = 2;
 }
 
-message AgeInfo {
-  string gender = 1;
+message ParticipantRequirements {
+  bool gender = 1;
   optional int32 min_age = 2;
   optional int32 max_age = 3;
 }
@@ -29,6 +29,7 @@ message EventInfo {
   DateRange dates = 6;
   string location = 7;
   int32 participants = 8;
+  repeated ParticipantRequirements participantRequirements = 9;
 }
 
 message LoadRequest {

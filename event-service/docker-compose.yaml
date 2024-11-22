@@ -6,14 +6,15 @@ services:
     env_file:
       - .env
     environment:
-      WAIT_HOSTS: pg:5432
-      PG_HOST: pg
+      WAIT_HOSTS: pg-es:5432
+      PG_HOST: pg-es
       PG_PORT: 5432
-      ENV: prod
+      # ENV: local
     depends_on:
       - pg-es
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${GRPC_PORT}:${GRPC_PORT}"
 
   pg-es:
     image: postgres:14.13-alpine3.20
