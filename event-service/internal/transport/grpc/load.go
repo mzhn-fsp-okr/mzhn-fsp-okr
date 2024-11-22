@@ -17,6 +17,11 @@ func (s *Server) Load(stream espb.EventService_LoadServer) error {
 	log := s.l.With(sl.Method(fn))
 	loaded := 0
 
+	if err := s.es.Stale(stream.Context()); err != nil {
+		log.Error("failed to mark events as stale", sl.Err(err))
+		return err
+	}
+
 	for {
 		req, err := stream.Recv()
 		if err != nil {

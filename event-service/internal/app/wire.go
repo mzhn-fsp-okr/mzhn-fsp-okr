@@ -35,6 +35,7 @@ func New() (*App, func(), error) {
 		eventservice.New,
 		wire.Bind(new(eventservice.EventProvider), new(*eventstorage.Storage)),
 		wire.Bind(new(eventservice.EventLoader), new(*eventstorage.Storage)),
+		wire.Bind(new(eventservice.EventManager), new(*eventstorage.Storage)),
 		wire.Bind(new(eventservice.NotificationPublisher), new(*amqp.RabbitMQ)),
 
 		authservice.New,
