@@ -16,6 +16,7 @@ def init_driver():
     Инициализация WebDriver с настройками для работы в фоновом режиме.
     """
     options = Options()
+    options.add_argument("--window-size=1920,1080")
     options.add_argument("--headless=new")
     logging.debug("Инициализация WebDriver")
     return webdriver.Chrome(
