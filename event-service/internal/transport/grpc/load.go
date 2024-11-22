@@ -7,6 +7,7 @@ import (
 	"mzhn/event-service/internal/domain"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
+	"time"
 
 	"github.com/samber/lo"
 )
@@ -29,6 +30,18 @@ func (s *Server) Load(stream espb.EventService_LoadServer) error {
 			return err
 		}
 
+		startDate, err := time.Parse("02.01.2006", req.Info.Dates.DateFrom)
+		if err != nil {
+			log.Error("failed to parse date", sl.Err(err))
+			return err
+		}
+
+		endDate, err := time.Parse("02.01.2006", req.Info.Dates.DateTo)
+		if err != nil {
+			log.Error("failed to parse date", sl.Err(err))
+			return err
+		}
+
 		log.Debug("loading event", slog.Any("event", req.Info))
 		if _, err := s.es.Load(stream.Context(), &domain.EventLoadInfo{
 			EkpId:        req.Info.EkpId,
@@ -37,8 +50,8 @@ func (s *Server) Load(stream espb.EventService_LoadServer) error {
 			Name:         req.Info.Name,
 			Description:  req.Info.Description,
 			Dates: domain.DateRange{
-				From: req.Info.Dates.DateFrom,
-				To:   req.Info.Dates.DateTo,
+				From: startDate,
+				To:   endDate,
 			},
 			Location:     req.Info.Location,
 			Participants: int(req.Info.Participants),

@@ -370,7 +370,7 @@ func (s *Storage) saveEventDate(ctx context.Context, eventId string, dates domai
 	log.Debug("exectuing sql", slog.String("sql", sql), slog.Any("args", args))
 
 	if _, err := conn.Exec(ctx, sql, args...); err != nil {
-		var pge pgconn.PgError
+		var pge *pgconn.PgError
 		if errors.As(err, &pge) {
 			log.Error("failed exec query", sl.PgError(pge))
 		} else {
@@ -414,7 +414,7 @@ func (s *Storage) saveParticipantsRequirements(ctx context.Context, eventId stri
 	log.Debug("exectuing sql", slog.String("sql", sql), slog.Any("args", args))
 
 	if _, err := conn.Exec(ctx, sql, args...); err != nil {
-		var pge pgconn.PgError
+		var pge *pgconn.PgError
 		if errors.As(err, &pge) {
 			log.Error("failed exec query", sl.PgError(pge))
 		} else {
