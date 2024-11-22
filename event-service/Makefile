@@ -7,7 +7,7 @@ build: gen
 	go build -o ./bin/app.exe ./cmd/app
 
 run: build
-	./bin/app -local
+	./bin/app
 
 PB=pb
 ESPB=$(PB)/espb

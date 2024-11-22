@@ -123,8 +123,8 @@ func (s *UsersStorage) Save(ctx context.Context, in *dto.CreateUser) (*entity.Us
 
 	builder := squirrel.
 		Insert(usersTable).
-		Columns("email", "hashed_password").
-		Values(in.Email, in.Password).
+		Columns("email", "hashed_password", "last_name", "first_name", "middle_name").
+		Values(in.Email, in.Password, in.LastName, in.FirstName, in.MiddleName).
 		Suffix("RETURNING *").
 		PlaceholderFormat(squirrel.Dollar)
 

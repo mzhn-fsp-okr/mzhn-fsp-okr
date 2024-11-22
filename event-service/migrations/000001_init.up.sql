@@ -25,8 +25,8 @@ create table if not exists events (
 
 create table if not exists event_dates (
   event_id uuid primary key references events(id) on delete cascade,
-  date_from varchar not null,
-  date_to varchar not null
+  date_from timestamp not null,
+  date_to timestamp not null
 );
 
 create table if not exists event_participants_requirements (
