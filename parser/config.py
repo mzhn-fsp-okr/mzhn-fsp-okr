@@ -15,8 +15,8 @@ WORKERS_COUNT = int(os.getenv("WORKERS_COUNT", os.cpu_count()))
 # Выполнять парсинг pdf при запуске приложения
 PROCESS_ON_STARTUP = os.getenv("PROCESS_ON_STARTUP", "FALSE").upper() == "TRUE"
 
-#
+# Парсить, даже если есть в cache
 FORCE_PARSE = os.getenv("FORCE_PARSE", "FALSE").upper() == "TRUE"
 
-#
+# Скачивать, даже если есть в cache
 FORCE_DOWNLOAD = os.getenv("FORCE_DOWNLOAD", "FALSE").upper() == "TRUE"
