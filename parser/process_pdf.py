@@ -7,11 +7,24 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional
 import camelot
 import re
-from lib import SportEvent
+from lib import SportEvent, sport_event_to_dict
 from grpc_communitcation import send_events_via_grpc
 from logger import logging
 import os
 from config import FORCE_PARSE, FORCE_DOWNLOAD
+
+camelot.logger.setLevel(logging.ERROR)
+
+PEOPLE_DESCRIPTION_KEYWORDS = [
+    "женщины",
+    "юниорки",
+    "девушки",
+    "девочки",
+    "мужчины",
+    "юниоры",
+    "юноши",
+    "мальчики",
+]
 
 def extract_gender_age(
     description: str,
@@ -81,11 +94,45 @@ def extract_gender_age(
         for age in unique_ages
     ]
 
+def post_process(event: SportEvent):
+    event.name = event.name.strip()
+    event.description = event.description.strip()
+    event.location = event.location.strip()
+    
+    # Инициализация переменной для хранения имени
+    start_index = -1
+
+    # Поиск первого символа, который не является строчной буквой или пробелом
+    for index, char in enumerate(event.description):
+        if char.islower():
+            start_index = index
+            break
+
+    # Если нашли начало имени
+    if start_index != -1:
+        event.name += event.description[:start_index].strip()
+        event.name = event.name.strip()
+        # Убираем имя из описания
+        event.description = event.description[start_index:].strip()
+        logging.debug(f"Название события извлечено и перенесено в 'name': {event.name}")
+    else:
+        # Если не найдено подходящего текста
+        logging.debug("Не найдено подходящего текста для названия, описание остается без изменений.")
+    
+    event.gender_age_info = extract_gender_age(event.description)
+
 
 def process_page_range(file_path, page_range: str) -> List[SportEvent]:
     logging.debug(f"Начало обработки диапазона страниц: {page_range}")
     tables = camelot.read_pdf(
-        file_path, flavor="stream", pages=page_range, row_tol=10, edge_tol=5000
+        file_path, 
+        flavor="stream", 
+        pages=page_range, 
+        row_tol=5,       
+        edge_tol=100,
+        columns=[
+            "107,340,467,725"
+        ]
     )
     logging.debug(f"Извлечено таблиц: {len(tables)} в диапазоне {page_range}")
 
@@ -138,10 +185,10 @@ def process_page_range(file_path, page_range: str) -> List[SportEvent]:
                         current_event.description += col2 + " "
 
                 if col3:
-                    if current_event.dates.from_:
-                        current_event.dates.to = col3
-                    else:
+                    if not current_event.dates.from_:
                         current_event.dates.from_ = col3
+                    elif not current_event.dates.to:
+                        current_event.dates.to = col3                    
 
                 if col4:
                     current_event.location += col4 + " "
@@ -156,11 +203,8 @@ def process_page_range(file_path, page_range: str) -> List[SportEvent]:
                         )
 
     # Очистка строковых полей
-    for event in events:
-        event.name = event.name.strip()
-        event.description = event.description.strip()
-        event.location = event.location.strip()
-        event.gender_age_info = extract_gender_age(event.description)
+    for event in events:        
+        post_process(event)
 
     logging.debug(
         f"Обработка диапазона {page_range} завершена. Всего событий: {len(events)}"
@@ -241,7 +285,9 @@ def process_pdf():
         cache = load_cache()
 
         # Получаем дату обновления и ссылку на PDF
-        update_date, link = get_link()
+        # update_date, link = get_link()
+        update_date = "14.11.2024"
+        link = ""
 
         # Проверяем, изменилась ли дата обновления
         if not FORCE_DOWNLOAD and cache.get("update_date") == update_date and os.path.exists(
@@ -304,6 +350,13 @@ def process_pdf():
                 event.sport_subtype = last_sport_subtype
             else:
                 last_sport_subtype = event.sport_subtype
+
+        # Преобразование событий в словари для JSON
+        events_dict = [sport_event_to_dict(event) for event in all_events]
+    
+        # Сохранение в JSON файл
+        with open('results.json', 'w', encoding='utf-8') as json_file:
+            json.dump(events_dict, json_file, ensure_ascii=False, indent=4)
 
         # Отправляем события через gRPC
         send_events_via_grpc(all_events)
