@@ -12,7 +12,8 @@ import Link from "next/link";
 import { HTMLAttributes } from "react";
 import { Button } from "../ui/button";
 
-import logo from "@/assets/images/brand.png";
+import brand from "@/assets/images/brand.png";
+import logo from "@/assets/images/logo.png";
 
 export interface PageHeaderProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -25,17 +26,30 @@ export default function PageHeader({ className, ...props }: PageHeaderProps) {
       )}
       {...props}
     >
-      <Image src={logo} alt="Logo" width={128} height={128} />
+      <Image
+        src={brand}
+        alt="Logo"
+        width={128}
+        height={128}
+        className="hidden sm:block"
+      />
+      <Image
+        src={logo}
+        alt="Logo"
+        width={32}
+        height={32}
+        className="sm:hidden"
+      />
       <NavigationMenu>
         <NavigationMenuList>
           <MenuItem title="Главная" href="/" />
-          <MenuItem title="Календарь" href="/" />
+          <MenuItem title="Календарь" href="/calendar" />
         </NavigationMenuList>
       </NavigationMenu>
       <div>
         <Button variant="ghost">
           <User />
-          Войти
+          <span className="hidden sm:inline">Войти</span>
         </Button>
       </div>
     </header>
