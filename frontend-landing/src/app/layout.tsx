@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={`${font.className} antialiased`}>
+      <body className={`${font.className} bg-zinc-900 antialiased`}>
         <ReactQueryProvider>{children}</ReactQueryProvider>
         <Toaster />
       </body>
