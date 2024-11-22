@@ -20,7 +20,7 @@ export default function PageHeader({ className, ...props }: PageHeaderProps) {
   return (
     <header
       className={cn(
-        "flex w-full items-center justify-between rounded bg-amber-50/90 px-8 py-4",
+        "flex w-full items-center justify-between rounded bg-[#e9e9e9] px-8 py-4",
         className
       )}
       {...props}
