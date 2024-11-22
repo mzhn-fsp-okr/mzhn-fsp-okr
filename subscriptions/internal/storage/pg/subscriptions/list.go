@@ -8,7 +8,7 @@ import (
 
 func (s *Storage) GetUserEventsId(userId string) ([]string, error) {
 	users := []*domain.EventSubscription{}
-	result := s.db.Select("user_id").Where("user_id = ?", userId).Find(&users)
+	result := s.db.Select("event_id").Where("user_id = ?", userId).Find(&users)
 	if result.Error != nil {
 		return nil, result.Error
 	}

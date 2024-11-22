@@ -67,7 +67,7 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 		return []*espb.EventInfo{}, nil
 	}
 
-	eventsInfo := make([]*espb.EventInfo, 0, len(eventIds))
+	eventsInfo := make([]*espb.EventInfo, len(eventIds))
 
 	stream, err := s.es.Events(context.Background())
 	if err != nil {
@@ -77,11 +77,13 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 	done := make(chan error)
 
 	go func() {
+		it := 0
 		for {
 			eventInfo, err := stream.Recv()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					done <- nil
+					return
 				}
 
 				if grpcErr, ok := status.FromError(err); ok {
@@ -91,8 +93,10 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 					}
 				}
 				done <- err
+				return
 			}
-			eventsInfo = append(eventsInfo, eventInfo.Info)
+			eventsInfo[it] = eventInfo.Info
+			it++
 		}
 	}()
 
