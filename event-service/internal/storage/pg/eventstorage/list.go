@@ -10,6 +10,7 @@ import (
 	"mzhn/event-service/pkg/sl"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
@@ -23,6 +24,8 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 		return fmt.Errorf("%s: %w", fn, err)
 	}
 	defer conn.Release()
+
+	ctx = context.WithValue(ctx, "tx", conn)
 
 	qb := sq.
 		Select("e.id, e.ekp_id, st.sport_type, sst.sport_subtype, e.name, e.description, e.location, e.participants, ed.date_from, ed.date_to").
@@ -100,13 +103,7 @@ func (s *Storage) listRequirementsFor(ctx context.Context, eventId string) ([]do
 	fn := "EventStorage.listRequirementsFor"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed to acquire connection", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
-	}
-	defer conn.Release()
-
+	conn := ctx.Value("tx").(*pgxpool.Conn)
 	qb := sq.
 		Select("epr.gender, epr.min_age, epr.max_age").
 		From(fmt.Sprintf("%s epr", pg.EVENT_PARTICIPANTS_REQUIREMENTS)).

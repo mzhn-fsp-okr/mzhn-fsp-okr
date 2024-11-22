@@ -104,3 +104,16 @@ func (s *Service) Stale(ctx context.Context) error {
 
 	return nil
 }
+
+func (s *Service) Find(ctx context.Context, eid string) (*domain.EventInfo, error) {
+	fn := "EventService.Find"
+	log := s.l.With(sl.Method(fn))
+
+	event, err := s.ep.Find(ctx, eid)
+	if err != nil {
+		log.Error("failed to find event", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return event, nil
+}

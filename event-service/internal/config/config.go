@@ -17,7 +17,7 @@ type App struct {
 }
 
 type Http struct {
-	Enabled bool   `env:"HTTP_ENABLED" env-required:"true" env-default:"false"`
+	Enabled bool   `env:"HTTP_ENABLED" env-default:"false"`
 	Host    string `env:"HTTP_HOST" env-default:"0.0.0.0"`
 	Port    int    `env:"HTTP_PORT"`
 	Cors    Cors
@@ -28,7 +28,7 @@ type Cors struct {
 }
 
 type Grpc struct {
-	Enabled       bool   `env:"GRPC_ENABLED" env-required:"true" env-default:"false"`
+	Enabled       bool   `env:"GRPC_ENABLED" env-default:"false"`
 	Host          string `env:"GRPC_HOST" env-default:"0.0.0.0"`
 	Port          int    `env:"GRPC_PORT"`
 	UseReflection bool   `env:"GRPC_USE_REFLECTION" env-default:"false"`

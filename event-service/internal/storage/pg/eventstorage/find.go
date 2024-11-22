@@ -26,6 +26,8 @@ func (r *Storage) Find(ctx context.Context, id string) (*domain.EventInfo, error
 	}
 	defer conn.Release()
 
+	ctx = context.WithValue(ctx, "tx", conn)
+
 	qb := sq.
 		Select("e.id, e.ekp_id, st.sport_type, sst.sport_subtype, e.name, e.description, e.location, e.participants, ed.date_from, ed.date_to").
 		From(fmt.Sprintf("%s e", pg.EVENTS)).
@@ -68,6 +70,13 @@ func (r *Storage) Find(ctx context.Context, id string) (*domain.EventInfo, error
 		log.Error("failed to execute query", sl.Err(err))
 		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
+
+	rr, err := r.listRequirementsFor(ctx, e.Id)
+	if err != nil {
+		log.Error("failed to list requirements", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+	e.ParticipantRequirements = rr
 
 	return e, nil
 }
