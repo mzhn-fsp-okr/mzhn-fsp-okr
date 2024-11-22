@@ -46,12 +46,22 @@ func (pg *Pg) ConnectionString() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", pg.User, pg.Pass, pg.Host, pg.Port, pg.Name)
 }
 
+type AuthService struct {
+	Host string `env:"AUTH_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"AUTH_SERVICE_PORT" env-required:"true"`
+}
+
+func (as *AuthService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", as.Host, as.Port)
+}
+
 type Config struct {
-	Env  string `env:"ENV" env-default:"local"`
-	App  App
-	Http Http
-	Grpc Grpc
-	Pg   Pg
+	Env         string `env:"ENV" env-default:"local"`
+	App         App
+	Http        Http
+	Grpc        Grpc
+	Pg          Pg
+	AuthService AuthService
 }
 
 func New() *Config {

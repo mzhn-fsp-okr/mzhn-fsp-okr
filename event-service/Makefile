@@ -11,15 +11,25 @@ run: build
 
 PB=pb
 ESPB=$(PB)/espb
-PROTO=proto/event-service.proto
+ESPROTO=proto/event-service.proto
+AUTHPB=$(PB)/authpb
+AUTHPROTO=proto/auth.proto
 protobuf:
 	cp -r ../proto .
+
 	protoc  \
 		--go_out=. \
-		--go_opt=M$(PROTO)=$(ESPB) \
+		--go_opt=M$(ESPROTO)=$(ESPB) \
 		--go-grpc_out=. \
-		--go-grpc_opt=M$(PROTO)=$(ESPB) \
-		$(PROTO)
+		--go-grpc_opt=M$(ESPROTO)=$(ESPB) \
+		$(ESPROTO)
+	
+	protoc  \
+		--go_out=. \
+		--go_opt=M$(AUTHPROTO)=$(AUTHPB) \
+		--go-grpc_out=. \
+		--go-grpc_opt=M$(AUTHPROTO)=$(AUTHPB) \
+		$(AUTHPROTO)
 
 wire-gen:
 	wire ./internal/app

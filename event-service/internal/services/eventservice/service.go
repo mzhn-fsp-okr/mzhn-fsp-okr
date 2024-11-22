@@ -2,6 +2,7 @@ package eventservice
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/domain"
@@ -10,6 +11,7 @@ import (
 
 type EventProvider interface {
 	Find(ctx context.Context, id string) (*domain.EventInfo, error)
+	List(ctx context.Context, chEvents chan<- domain.EventInfo) error
 }
 
 type EventLoader interface {
@@ -43,4 +45,17 @@ func (s *Service) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	}
 
 	return eid, nil
+}
+
+func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo) error {
+	fn := "EventService.List"
+	log := s.l.With(sl.Method(fn))
+
+	err := s.ep.List(ctx, chEvents)
+	if err != nil {
+		log.Error("failed to list events", sl.Err(err))
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return nil
 }

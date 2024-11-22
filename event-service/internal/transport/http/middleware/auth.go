@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/domain"
-	"mzhn/event-service/internal/domain/dto"
-	"mzhn/event-service/internal/domain/entity"
 	"mzhn/event-service/internal/services/authservice"
 	"mzhn/event-service/pkg/responses"
 	"mzhn/event-service/pkg/sl"
@@ -14,10 +12,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type RoleFunc func(roles ...entity.Role) echo.MiddlewareFunc
+type RoleFunc func(roles ...domain.Role) echo.MiddlewareFunc
 
-func RequireAuth(as *authservice.AuthService, cfg *config.Config) RoleFunc {
-	return func(roles ...entity.Role) echo.MiddlewareFunc {
+func RequireAuth(as *authservice.Service, cfg *config.Config) RoleFunc {
+	return func(roles ...domain.Role) echo.MiddlewareFunc {
 		return func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) error {
 				slog.Debug("require auth check")
@@ -30,21 +28,12 @@ func RequireAuth(as *authservice.AuthService, cfg *config.Config) RoleFunc {
 
 				ctx := c.Request().Context()
 
-				user, err := as.Authenticate(ctx, &dto.Authenticate{
-					AccessToken: token.(string),
-					Roles:       roles,
-				})
+				user, err := as.Authenticate(ctx, token.(string), roles...)
 				if err != nil {
 					slog.Error("failed to authenticate token", sl.Err(err))
 
-					if errors.Is(err, domain.ErrTokenInvalid) {
+					if errors.Is(err, domain.ErrUnathorized) {
 						return responses.Unauthorized(c)
-					} else if errors.Is(err, domain.ErrTokenExpired) {
-						return responses.Unauthorized(c)
-					} else if errors.Is(err, domain.ErrUserNotFound) {
-						return responses.Unauthorized(c)
-					} else if errors.Is(err, domain.ErrInsufficientPermission) {
-						return responses.Forbidden(c)
 					}
 
 					return responses.Internal(c, err)

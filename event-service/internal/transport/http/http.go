@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"mzhn/event-service/internal/config"
+	"mzhn/event-service/internal/services/authservice"
+	"mzhn/event-service/internal/services/eventservice"
+	"mzhn/event-service/internal/transport/http/handlers"
 	"mzhn/event-service/pkg/sl"
 	"strings"
 
@@ -17,13 +20,18 @@ type Server struct {
 
 	cfg    *config.Config
 	logger *slog.Logger
+
+	as *authservice.Service
+	es *eventservice.Service
 }
 
-func New(cfg *config.Config) *Server {
+func New(cfg *config.Config, as *authservice.Service, es *eventservice.Service) *Server {
 	return &Server{
 		Echo:   echo.New(),
 		logger: slog.Default().With(sl.Module("http")),
 		cfg:    cfg,
+		as:     as,
+		es:     es,
 	}
 }
 
@@ -38,6 +46,8 @@ func (h *Server) setup() {
 
 	// tokguard := middleware.Token()
 	// authguard := middleware.RequireAuth(h.as, h.cfg)
+
+	h.GET("/", handlers.Events(h.es) /*, tokguard(), authguard()*/)
 }
 
 func (h *Server) Run(ctx context.Context) error {

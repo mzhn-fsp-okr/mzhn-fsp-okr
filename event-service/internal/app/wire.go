@@ -10,14 +10,18 @@ import (
 	"time"
 
 	"mzhn/event-service/internal/config"
+	"mzhn/event-service/internal/services/authservice"
 	"mzhn/event-service/internal/services/eventservice"
 	"mzhn/event-service/internal/storage/pg/eventstorage"
-	"mzhn/event-service/internal/transport/grpc"
+	esgrpc "mzhn/event-service/internal/transport/grpc"
 	"mzhn/event-service/internal/transport/http"
+	"mzhn/event-service/pb/authpb"
 
 	"github.com/google/wire"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func New() (*App, func(), error) {
@@ -29,8 +33,11 @@ func New() (*App, func(), error) {
 		wire.Bind(new(eventservice.EventProvider), new(*eventstorage.Storage)),
 		wire.Bind(new(eventservice.EventLoader), new(*eventstorage.Storage)),
 
+		authservice.New,
+
 		eventstorage.New,
 
+		_authpb,
 		_pg,
 		config.New,
 	))
@@ -55,15 +62,25 @@ func _pg(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 	return pool, func() { pool.Close() }, nil
 }
 
-func _servers(cfg *config.Config, es *eventservice.Service) []Server {
+func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
+	addr := cfg.AuthService.ConnectionString()
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	return authpb.NewAuthClient(conn), nil
+}
+
+func _servers(cfg *config.Config, es *eventservice.Service, as *authservice.Service) []Server {
 	servers := make([]Server, 0, 2)
 
 	if cfg.Http.Enabled {
-		servers = append(servers, http.New(cfg))
+		servers = append(servers, http.New(cfg, as, es))
 	}
 
 	if cfg.Grpc.Enabled {
-		servers = append(servers, grpc.New(cfg, es))
+		servers = append(servers, esgrpc.New(cfg, es))
 	}
 
 	return servers
