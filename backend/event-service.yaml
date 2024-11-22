@@ -1,0 +1,39 @@
+services:
+  event-service:
+    container_name: mzhn-event-service
+    restart: unless-stopped
+    build:
+      context: ../event-service/
+    env_file:
+      - .env
+    environment:
+      WAIT_HOSTS: pg-es:5432
+      PG_HOST: pg-es
+      PG_PORT: 5432
+      PG_NAME: ${EVENT_SERVICE_PG_NAME}
+      PG_USER: ${EVENT_SERVICE_PG_USER}
+      PG_PASS: ${EVENT_SERVICE_PG_PASS}
+      HTTP_PORT: 80
+      GRPC_PORT: 7000
+      ENV: prod
+    depends_on:
+      - pg-es
+    ports:
+      - "${EVENT_SERVICE_HTTP_PORT}:80"
+      - "${EVENT_SERVICE_GRPC_PORT}:7000"
+    volumes:
+      - ../event-service/.env:/app/.env
+
+  pg-es:
+    image: postgres:14.13-alpine3.20
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${EVENT_SERVICE_PG_NAME}
+      POSTGRES_USER: ${EVENT_SERVICE_PG_USER}
+      POSTGRES_PASSWORD: ${EVENT_SERVICE_PG_PASS}
+    volumes:
+      - pg-es-data:/var/lib/postgresql/data
+
+volumes:
+  pg-es-data:
+    name: mzhn-es-pg
