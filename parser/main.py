@@ -1,13 +1,42 @@
 import schedule
-from process_pdf import process_pdf
 import time
+from config import PROCESS_ON_STARTUP
+from logger import logging
+from process_pdf import process_pdf
+
+
+def run_task():
+    """
+    Выполняет основную задачу с обработкой ошибок.
+    """
+    try:
+        logging.info("Запуск задачи process_pdf")
+        process_pdf()
+        logging.info("Задача process_pdf выполнена успешно")
+    except Exception as e:
+        logging.error(f"Ошибка при выполнении process_pdf: {e}", exc_info=True)
+
 
 def main():
-    process_pdf()
-    schedule.every().day.at("00:00", "Europe/Moscow").do(process_pdf)
+    """
+    Основная функция запуска планировщика задач.
+    """
+
+    if PROCESS_ON_STARTUP:
+        run_task()
+
+    schedule.every().day.at("00:00").do(run_task)
+
+    logging.info("Планировщик запущен. Ожидание задач...")
+
     while True:
-        schedule.run_pending()
+        try:
+            # Выполняем запланированные задачи
+            schedule.run_pending()
+        except Exception as e:
+            logging.error(f"Ошибка в планировщике: {e}", exc_info=True)
         time.sleep(1)
+
 
 if __name__ == "__main__":
     main()
