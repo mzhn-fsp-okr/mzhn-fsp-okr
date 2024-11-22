@@ -14,7 +14,7 @@ type Storage struct {
 	pool *pgxpool.Pool
 }
 
-func NewEventStorage(cfg *config.Config, pool *pgxpool.Pool) *Storage {
+func New(cfg *config.Config, pool *pgxpool.Pool) *Storage {
 	return &Storage{
 		l:    slog.With(sl.Module("EventStorage")),
 		cfg:  cfg,

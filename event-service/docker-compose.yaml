@@ -1,24 +1,21 @@
 services:
-  user-service:
-    container_name: mzhn-auth-service
+  event-service:
+    container_name: mzhn-event-service
     build:
       context: .
     env_file:
       - .env
     environment:
-      WAIT_HOSTS: pg:5432, redis:6379
+      WAIT_HOSTS: pg:5432
       PG_HOST: pg
       PG_PORT: 5432
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       ENV: prod
     depends_on:
-      - pg
+      - pg-es
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
-      - "${GRPC_PORT}:${GRPC_PORT}"
 
-  pg:
+  pg-es:
     image: postgres:14.13-alpine3.20
     restart: unless-stopped
     environment:
@@ -26,28 +23,10 @@ services:
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASS}
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg-es-data:/var/lib/postgresql/data
     ports:
-      - ${PG_PORT}:5432
-
-  redis:
-    image: redis:7.2.4-alpine
-    restart: always
-    ports:
-      - "${REDIS_PORT}:6379"
-    env_file:
-      - .env
-    volumes:
-      - redis-data:/data
-    # networks:
-    #   - redis-net
+      - 5433:5432
 
 volumes:
-  pg_data:
-    name: mzhn-auth-pg
-  redis-data:
-    name: mzhn-auth-redis
-# networks:
-#   redis-net:
-#     name: redis-net
-#     driver: bridge
+  pg-es-data:
+    name: mzhn-es-pg

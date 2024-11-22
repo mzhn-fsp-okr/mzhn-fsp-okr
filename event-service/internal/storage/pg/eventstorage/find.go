@@ -10,6 +10,7 @@ import (
 	"mzhn/event-service/pkg/sl"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -30,8 +31,13 @@ func (r *Storage) Find(ctx context.Context, id string) (*domain.EventInfo, error
 		InnerJoin(fmt.Sprintf("%s ed e.id = ed.id", pg.EVENT_DATES)).
 		InnerJoin(fmt.Sprintf("%s sst e.sport_subtype_id = sst.id", pg.SPORT_SUBTYPES)).
 		InnerJoin(fmt.Sprintf("%s st sst.sport_type_id = st.id", pg.SPORT_TYPES)).
-		Where(sq.Or{sq.Eq{"e.id": id}, sq.Eq{"e.ekp_id": id}}).
 		PlaceholderFormat(sq.Dollar)
+
+	if _, err := uuid.Parse(id); err != nil {
+		qb = qb.Where(sq.Eq{"e.ekp_id": id})
+	} else {
+		qb = qb.Where(sq.Eq{"e.id": id})
+	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {

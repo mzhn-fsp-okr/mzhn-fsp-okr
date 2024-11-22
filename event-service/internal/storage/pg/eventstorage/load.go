@@ -10,6 +10,7 @@ import (
 	"mzhn/event-service/pkg/sl"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -39,10 +40,35 @@ type sportSubtype struct {
 	sportTypeId string
 }
 
-func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (string, error) {
+func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (id string, err error) {
 
 	fn := "EventStorage.Load"
 	log := s.l.With(sl.Method(fn))
+
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		log.Error("failed acquire connection", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+	defer conn.Release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		log.Error("failed begin transaction", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			log.Error("failed commit transaction", sl.Err(err))
+		}
+	}()
+
+	ctx = context.WithValue(ctx, "tx", tx)
 
 	var stId, sstId string
 	st, err := s.findSportType(ctx, in.SportType)
@@ -52,31 +78,43 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	}
 
 	if st == nil {
-		log.Debug("sport type not found", slog.String("slug", in.SportType))
-		id, err := s.saveSportType(ctx, in.SportType)
+		log.Debug("saving sport type", slog.String("slug", in.SportType))
+
+		stid, err := s.saveSportType(ctx, in.SportType)
 		if err != nil {
 			log.Error("failed save sport type", sl.Err(err))
 			return "", fmt.Errorf("%s: %w", fn, err)
 		}
-		stId = id
-	} else {
-		stId = st.id
-	}
+		stId = stid
 
-	sst, err := s.findSportSubtype(ctx, in.SportSubtype)
-	if err != nil {
-		log.Error("failed find sport subtype", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
-	}
-
-	if sst == nil {
-		log.Debug("sport subtype not found", slog.String("slug", in.SportSubtype))
-		id, err := s.saveSportSubtype(ctx, saveSportSubtype{name: in.SportSubtype, sportTypeId: stId})
+		sstid, err := s.saveSportSubtype(ctx, saveSportSubtype{name: in.SportSubtype, sportTypeId: stId})
 		if err != nil {
 			log.Error("failed save sport subtype", sl.Err(err))
 			return "", fmt.Errorf("%s: %w", fn, err)
 		}
-		sstId = id
+
+		sstId = sstid
+	} else {
+		stId = st.id
+
+		sst, err := s.findSportSubtypeByName(ctx, stId, in.SportSubtype)
+		if err != nil {
+			log.Error("failed find sport subtype", sl.Err(err))
+			return "", fmt.Errorf("%s: %w", fn, err)
+		}
+
+		if sst == nil {
+			log.Debug("sport subtype not found", slog.String("slug", in.SportSubtype))
+
+			sstid, err := s.saveSportSubtype(ctx, saveSportSubtype{name: in.SportSubtype, sportTypeId: stId})
+			if err != nil {
+				log.Error("failed save sport subtype", sl.Err(err))
+				return "", fmt.Errorf("%s: %w", fn, err)
+			}
+			sstId = sstid
+		} else {
+			sstId = sst.id
+		}
 	}
 
 	eId, err := s.save(ctx, &saveEvent{
@@ -97,6 +135,11 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 		return "", fmt.Errorf("%s: %w", fn, err)
 	}
 
+	if err := s.saveParticipantsRequirements(ctx, eId, in.ParticipantRequirements); err != nil {
+		log.Error("failed save participants requirements", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+
 	return eId, nil
 }
 
@@ -104,17 +147,18 @@ func (s *Storage) findSportType(ctx context.Context, slug string) (*sportType, e
 	fn := "EventStorage.findSportType"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Select("*").
 		From(fmt.Sprintf("%s st", pg.SPORT_TYPES)).
-		Where(sq.Or{sq.Eq{"st.id": slug}, sq.Eq{"st.sport_type": slug}}).
 		PlaceholderFormat(sq.Dollar)
+
+	if _, err := uuid.Parse(slug); err != nil {
+		qb = qb.Where(sq.Eq{"st.sport_type": slug})
+	} else {
+		qb = qb.Where(sq.Eq{"st.id": slug})
+	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
@@ -140,20 +184,16 @@ func (s *Storage) findSportType(ctx context.Context, slug string) (*sportType, e
 	return st, nil
 }
 
-func (s *Storage) findSportSubtype(ctx context.Context, slug string) (*sportSubtype, error) {
-	fn := "EventStorage.findSportSubtype"
+func (s *Storage) findSportSubtypeById(ctx context.Context, id string) (*sportSubtype, error) {
+	fn := "EventStorage.findSportSubtypeById"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Select("*").
 		From(fmt.Sprintf("%s sst", pg.SPORT_SUBTYPES)).
-		Where(sq.Or{sq.Eq{"sst.id": slug}, sq.Eq{"sst.sport_subtype": slug}}).
+		Where(sq.Eq{"sst.id": id}).
 		PlaceholderFormat(sq.Dollar)
 
 	sql, args, err := qb.ToSql()
@@ -171,7 +211,44 @@ func (s *Storage) findSportSubtype(ctx context.Context, slug string) (*sportSubt
 		&sst.sportTypeId,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			log.Debug("sport type not found", slog.String("slug", slug))
+			log.Debug("sport type not found", slog.String("id", id))
+			return nil, nil
+		}
+		log.Error("failed query row", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return sst, nil
+}
+
+func (s *Storage) findSportSubtypeByName(ctx context.Context, sportTypeId, name string) (*sportSubtype, error) {
+	fn := "EventStorage.findSportSubtype"
+	log := s.l.With(sl.Method(fn))
+
+	conn := ctx.Value("tx").(pgx.Tx)
+
+	qb := sq.
+		Select("*").
+		From(fmt.Sprintf("%s sst", pg.SPORT_SUBTYPES)).
+		Where(sq.And{sq.Eq{"sst.sport_subtype": name}, sq.Eq{"sst.sport_type_id": sportTypeId}}).
+		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := qb.ToSql()
+	if err != nil {
+		log.Error("failed build sql", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	log.Debug("exectuing sql", slog.String("sql", sql), slog.Any("args", args))
+
+	sst := new(sportSubtype)
+	if err := conn.QueryRow(ctx, sql, args...).Scan(
+		&sst.id,
+		&sst.name,
+		&sst.sportTypeId,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			log.Debug("sport type not found", slog.String("name", name), slog.String("sportTypeId", sportTypeId))
 			return nil, nil
 		}
 		log.Error("failed query row", sl.Err(err))
@@ -185,17 +262,13 @@ func (s *Storage) saveSportType(ctx context.Context, name string) (string, error
 	fn := "EventStorage.saveSportType"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Insert(pg.SPORT_TYPES).
 		Columns("sport_type").
 		Values(name).
-		Suffix(fmt.Sprintf("RETURNING id")).
+		Suffix("RETURNING id").
 		PlaceholderFormat(sq.Dollar)
 
 	sql, args, err := qb.ToSql()
@@ -219,11 +292,7 @@ func (s *Storage) saveSportSubtype(ctx context.Context, in saveSportSubtype) (st
 	fn := "EventStorage.saveSportSubtype"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Insert(pg.SPORT_SUBTYPES).
@@ -254,11 +323,7 @@ func (s *Storage) save(ctx context.Context, in *saveEvent) (string, error) {
 	fn := "EventStorage.findSportSubtype"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Insert(pg.EVENTS).
@@ -288,17 +353,57 @@ func (s *Storage) saveEventDate(ctx context.Context, eventId string, dates domai
 	fn := "EventStorage.saveEventDate"
 	log := s.l.With(sl.Method(fn))
 
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		log.Error("failed acquire connection", sl.Err(err))
-		return fmt.Errorf("%s: %w", fn, err)
-	}
+	conn := ctx.Value("tx").(pgx.Tx)
 
 	qb := sq.
 		Insert(pg.EVENT_DATES).
 		Columns("event_id", "date_from", "date_to").
 		Values(eventId, dates.From, dates.To).
 		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := qb.ToSql()
+	if err != nil {
+		log.Error("failed build sql", sl.Err(err))
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	log.Debug("exectuing sql", slog.String("sql", sql), slog.Any("args", args))
+
+	if _, err := conn.Exec(ctx, sql, args...); err != nil {
+		var pge pgconn.PgError
+		if errors.As(err, &pge) {
+			log.Error("failed exec query", sl.PgError(pge))
+		} else {
+			log.Error("failed exec query", sl.Err(err))
+		}
+		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) saveParticipantsRequirements(ctx context.Context, eventId string, requirements []domain.ParticipantRequirements) error {
+	fn := "EventStorage.saveEventDate"
+	log := s.l.With(sl.Method(fn))
+
+	conn := ctx.Value("tx").(pgx.Tx)
+
+	qb := sq.
+		Insert(pg.EVENT_PARTICIPANTS_REQUIREMENTS).
+		Columns("event_id", "gender", "min_age", "max_age").
+		PlaceholderFormat(sq.Dollar)
+
+	for _, r := range requirements {
+		if r.MaxAge != nil && r.MinAge != nil {
+			qb = qb.Values(eventId, r.Gender, *r.MinAge, *r.MaxAge)
+		} else if r.MaxAge != nil {
+			qb = qb.Values(eventId, r.Gender, nil, *r.MaxAge)
+		} else if r.MinAge != nil {
+			qb = qb.Values(eventId, r.Gender, *r.MinAge, nil)
+		} else {
+			qb = qb.Values(eventId, r.Gender, nil, nil)
+		}
+	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {

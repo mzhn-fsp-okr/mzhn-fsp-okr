@@ -41,6 +41,8 @@ func (a *App) Run(ctx context.Context) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
+	slog.Info("starting servers", slog.Int("len", len(a.servers)))
+
 	for _, server := range a.servers {
 		wg.Add(1)
 		go func(s Server) {

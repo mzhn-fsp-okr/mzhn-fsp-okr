@@ -7,6 +7,8 @@ import (
 	"mzhn/event-service/internal/domain"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
+
+	"github.com/samber/lo"
 )
 
 func (s *Server) Load(stream espb.EventService_LoadServer) error {
@@ -35,11 +37,20 @@ func (s *Server) Load(stream espb.EventService_LoadServer) error {
 			Name:         req.Info.Name,
 			Description:  req.Info.Description,
 			Dates: domain.DateRange{
-				From: req.Info.Dates.From,
-				To:   req.Info.Dates.To,
+				From: req.Info.Dates.DateFrom,
+				To:   req.Info.Dates.DateTo,
 			},
 			Location:     req.Info.Location,
 			Participants: int(req.Info.Participants),
+			ParticipantRequirements: lo.Map(req.Info.ParticipantRequirements, func(r *espb.ParticipantRequirements, _ int) domain.ParticipantRequirements {
+				pr := domain.ParticipantRequirements{
+					Gender: r.Gender,
+					MinAge: r.MinAge,
+					MaxAge: r.MaxAge,
+				}
+
+				return pr
+			}),
 		}); err != nil {
 			log.Error("failed to load event", sl.Err(err))
 			return err
