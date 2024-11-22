@@ -6,12 +6,13 @@ import (
 	"log/slog"
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/domain"
+	"mzhn/event-service/internal/storage/model"
 	"mzhn/event-service/pkg/sl"
 )
 
 type EventProvider interface {
 	Find(ctx context.Context, id string) (*domain.EventInfo, error)
-	List(ctx context.Context, chEvents chan<- domain.EventInfo) error
+	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error
 }
 
 type EventLoader interface {
@@ -47,11 +48,11 @@ func (s *Service) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	return eid, nil
 }
 
-func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo) error {
+func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
 	fn := "EventService.List"
 	log := s.l.With(sl.Method(fn))
 
-	err := s.ep.List(ctx, chEvents)
+	err := s.ep.List(ctx, chEvents, filters)
 	if err != nil {
 		log.Error("failed to list events", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)

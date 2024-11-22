@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type ParticipantRequirements struct {
 	Gender bool   `json:"gender"`
 	MinAge *int32 `json:"minAge"`
@@ -7,8 +9,8 @@ type ParticipantRequirements struct {
 }
 
 type DateRange struct {
-	From string `json: "from"`
-	To   string `json: "to"`
+	From time.Time `json:"from"`
+	To   time.Time `json:"to"`
 }
 
 type EventLoadInfo struct {

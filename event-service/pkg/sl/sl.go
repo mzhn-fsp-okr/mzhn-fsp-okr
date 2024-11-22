@@ -13,7 +13,7 @@ func Err(err error) slog.Attr {
 	}
 }
 
-func PgError(err pgconn.PgError) slog.Attr {
+func PgError(err *pgconn.PgError) slog.Attr {
 	return slog.Attr{
 		Key:   "error",
 		Value: slog.AnyValue(err),
