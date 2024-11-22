@@ -103,3 +103,16 @@ func UnsubscribeFromEvent(ss *subscriptionservice.Service) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, echo.Map{"success": true})
 	}
 }
+
+func GetUserEvents(ss *subscriptionservice.Service) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := c.Get(middleware.USER).(*authpb.UserInfo)
+
+		events, err := ss.GetUserEvents(user.Id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(http.StatusOK, echo.Map{"events": events})
+	}
+}

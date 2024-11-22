@@ -52,6 +52,7 @@ func (h *Server) setup() {
 	sport.POST("/unsubscribe", handlers.UnsubscribeFromSport(h.ss))
 
 	event := h.Group("/event", tokguard(), authguard())
+	event.GET("/", handlers.GetUserEvents(h.ss))
 	event.POST("/subscribe", handlers.SubscribeToEvent(h.ss))
 	event.POST("/unsubscribe", handlers.UnsubscribeFromEvent(h.ss))
 }
