@@ -17,16 +17,31 @@ func New(storage domain.SubscriptionsStorage) *Service {
 		storage: storage,
 	}
 }
-func (s *Service) CreateSubscriptionToSport(dto *domain.SportSubscription) (*domain.SportSubscription, error) {
-	log := s.l.With(sl.Method("SubscriptionsService.CreateSubscriptionToSport"))
+func (s *Service) SubscribeToSport(dto *domain.SportSubscription) (*domain.SportSubscription, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToSport"))
 
-	log.Debug("creating sport subscription")
+	log.Debug("creating sport subscription", slog.Any("userId", dto.UserId), slog.Any("sportId", dto.SportId))
 	return s.storage.CreateSport(dto)
 }
 
-func (s *Service) CreateSubscriptionToEvent(dto *domain.EventSubscription) (*domain.EventSubscription, error) {
-	log := s.l.With(sl.Method("SubscriptionsService.CreateSubscriptionToEvent"))
+func (s *Service) SubscribeToEvent(dto *domain.EventSubscription) (*domain.EventSubscription, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToEvent"))
 
-	log.Debug("creating event subscription")
+	log.Debug("creating event subscription", slog.Any("userId", dto.UserId), slog.Any("eventId", dto.EventId))
 	return s.storage.CreateEvent(dto)
+}
+
+func (s *Service) UnsubscribeFromSport(dto *domain.SportSubscription) error {
+	log := s.l.With(sl.Method("SubscriptionsService.UnsubscribeFromSport"))
+
+	log.Debug("unsubscribe from sport", slog.Any("userId", dto.UserId), slog.Any("sportId", dto.SportId))
+	return s.storage.DeleteSport(dto)
+}
+
+func (s *Service) UnsubscribeFromEvent(dto *domain.EventSubscription) error {
+	log := s.l.With(sl.Method("SubscriptionsService.UnsubscribeFromEvent"))
+
+	log.Debug("unsubscribe from event", slog.Any("userId", dto.UserId), slog.Any("eventId", dto.EventId))
+	return s.storage.DeleteEvent(dto)
+
 }

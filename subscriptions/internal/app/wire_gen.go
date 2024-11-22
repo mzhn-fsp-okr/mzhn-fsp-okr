@@ -76,7 +76,7 @@ func _db(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err = db.AutoMigrate(&domain.SportSubscription{}); err != nil {
+	if err = db.AutoMigrate(&domain.SportSubscription{}, &domain.EventSubscription{}); err != nil {
 		return nil, err
 	}
 
