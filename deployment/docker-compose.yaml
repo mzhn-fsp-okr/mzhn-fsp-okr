@@ -1,6 +1,7 @@
 include:
   - auth.yaml
   - event-service.yaml
+  - rmq.yaml
 
 services:
   nginx:
