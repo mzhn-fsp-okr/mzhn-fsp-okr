@@ -1,0 +1,23 @@
+package eventstorage
+
+import (
+	"log/slog"
+	"mzhn/event-service/internal/config"
+	"mzhn/event-service/pkg/sl"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Storage struct {
+	l    *slog.Logger
+	cfg  *config.Config
+	pool *pgxpool.Pool
+}
+
+func NewEventStorage(cfg *config.Config, pool *pgxpool.Pool) *Storage {
+	return &Storage{
+		l:    slog.With(sl.Module("EventStorage")),
+		cfg:  cfg,
+		pool: pool,
+	}
+}

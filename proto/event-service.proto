@@ -1,0 +1,48 @@
+syntax="proto3";
+
+package events;
+
+option go_package="mzhn/proto/event-service;espb";
+
+service EventService {
+  rpc Load(stream LoadRequest) returns (LoadResponse);
+  rpc Events(stream EventRequest) returns (stream EventResponse);
+}
+
+message DateRange {
+  string from = 1;
+  string to = 2;
+}
+
+message AgeInfo {
+  string gender = 1;
+  optional int32 min_age = 2;
+  optional int32 max_age = 3;
+}
+
+message EventInfo {
+  string ekpId = 1;
+  string sportType = 2;
+  string sportSubtype = 3;
+  string name = 4;
+  string description = 5;
+  DateRange dates = 6;
+  string location = 7;
+  int32 participants = 8;
+}
+
+message LoadRequest {
+  EventInfo info = 1;
+}
+
+message LoadResponse {
+  int32 saved = 1;
+}
+
+message EventRequest {
+  string id = 1;
+}
+
+message EventResponse {
+  EventInfo info = 1;
+}
