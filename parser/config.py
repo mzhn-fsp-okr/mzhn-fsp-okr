@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Адрес event-service
-EVENT_SERVICE_ADDRESS = os.getenv("EVENT_SERVER_ADDRESS")
+EVENT_SERVICE_ADDRESS = os.getenv("EVENT_SERVICE_ADDRESS")
 
 # Уровень логирования
 LOG_LEVEL = os.getenv("LOG_LEVEL", "ERROR").upper()
