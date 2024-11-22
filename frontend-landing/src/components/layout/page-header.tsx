@@ -26,20 +26,22 @@ export default function PageHeader({ className, ...props }: PageHeaderProps) {
       )}
       {...props}
     >
-      <Image
-        src={brand}
-        alt="Logo"
-        width={128}
-        height={128}
-        className="hidden sm:block"
-      />
-      <Image
-        src={logo}
-        alt="Logo"
-        width={32}
-        height={32}
-        className="sm:hidden"
-      />
+      <Link href="/">
+        <Image
+          src={brand}
+          alt="Logo"
+          width={128}
+          height={128}
+          className="hidden sm:block"
+        />
+        <Image
+          src={logo}
+          alt="Logo"
+          width={32}
+          height={32}
+          className="sm:hidden"
+        />
+      </Link>
       <NavigationMenu>
         <NavigationMenuList>
           <MenuItem title="Главная" href="/" />
