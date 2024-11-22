@@ -21,6 +21,10 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 	for {
 		req, err := stream.Recv()
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			log.Error("failed to receive event request", sl.Err(err))
 			return err
 		}
 
@@ -65,6 +69,7 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 
 		log.Debug("sending event response", slog.Any("response", response))
 		if err := stream.Send(response); err != nil {
+			log.Error("failed to send event response", sl.Err(err))
 			return err
 		}
 	}
