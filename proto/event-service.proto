@@ -10,8 +10,8 @@ service EventService {
 }
 
 message DateRange {
-  string from = 1;
-  string to = 2;
+  string date_from = 1;
+  string date_to = 2;
 }
 
 message AgeInfo {
