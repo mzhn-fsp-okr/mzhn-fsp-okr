@@ -13,4 +13,10 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "ERROR").upper()
 WORKERS_COUNT = int(os.getenv("WORKERS_COUNT", os.cpu_count()))
 
 # Выполнять парсинг pdf при запуске приложения
-PROCESS_ON_STARTUP = os.getenv("PROCESS_ON_STARTUP", "FALSE").upper == "TRUE"
+PROCESS_ON_STARTUP = os.getenv("PROCESS_ON_STARTUP", "FALSE").upper() == "TRUE"
+
+#
+FORCE_PARSE = os.getenv("FORCE_PARSE", "FALSE").upper() == "TRUE"
+
+#
+FORCE_DOWNLOAD = os.getenv("FORCE_DOWNLOAD", "FALSE").upper() == "TRUE"

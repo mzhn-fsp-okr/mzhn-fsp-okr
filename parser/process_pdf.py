@@ -1,3 +1,4 @@
+import json
 from get_new_pdf import get_link
 import requests
 import tempfile
@@ -6,11 +7,11 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional
 import camelot
 import re
-from lib import SportEvent, sport_event_to_dict
+from lib import SportEvent
 from grpc_communitcation import send_events_via_grpc
 from logger import logging
 import os
-
+from config import FORCE_PARSE, FORCE_DOWNLOAD
 
 def extract_gender_age(
     description: str,
@@ -218,12 +219,52 @@ def download_pdf(url: str) -> str:
         raise Exception(f"HTTP {response.status_code}")
 
 
+CACHE_FILE = "cache.json"
+
+
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_cache(cache):
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f)
+
+
 def process_pdf():
     file_path = None
     try:
-        # Получаем ссылку на PDF и скачиваем файл
-        _, link = get_link()
-        file_path = download_pdf(link)
+        # Загружаем кеш
+        cache = load_cache()
+
+        # Получаем дату обновления и ссылку на PDF
+        update_date, link = get_link()
+
+        # Проверяем, изменилась ли дата обновления
+        if not FORCE_DOWNLOAD and cache.get("update_date") == update_date and os.path.exists(
+            cache.get("file_path", "")
+        ):
+            logging.info(
+                "PDF не изменился с последнего скачивания."
+            )
+            file_path = cache["file_path"]
+
+            if not FORCE_PARSE:
+                return
+        else:
+            if os.path.exists(cache.get("file_path", "")):
+                logging.info("Удаляем старый PDF файл.")
+                os.remove(cache.get("file_path", ""))
+
+            # Скачиваем новый PDF
+            file_path = download_pdf(link)
+            cache["update_date"] = update_date
+            cache["file_path"] = file_path
+            save_cache(cache)
+            logging.info("Скачан новый PDF файл.")
 
         # Читаем PDF и определяем количество страниц
         reader = PdfReader(file_path)
@@ -232,6 +273,8 @@ def process_pdf():
         # Разбиваем страницы на диапазоны для многопроцессорной обработки
         num_workers = os.cpu_count()
         page_ranges = split_pages(total_pages, num_workers)
+
+        logging.info(f"Начата обработка. Количество потоков: {num_workers}")
 
         # Список всех извлеченных событий
         all_events = []
@@ -267,11 +310,4 @@ def process_pdf():
         logging.info(f"Всего отправлено событий: {len(all_events)}")
     except Exception as e:
         logging.error(f"Общая ошибка в процессе обработки PDF: {e}")
-    finally:
-        # Удаляем временный файл
-        if file_path and os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-                logging.info(f"Временный файл {file_path} удален.")
-            except Exception as e:
-                logging.error(f"Не удалось удалить временный файл {file_path}: {e}")
+
