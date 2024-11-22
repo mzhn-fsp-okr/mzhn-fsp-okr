@@ -27,6 +27,7 @@ pip-system-certs = "^4.0"
 selenium = "^4.26.1"
 webdriver-manager = "^4.0.2"
 black = "^24.10.0"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

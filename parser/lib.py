@@ -28,19 +28,25 @@ class SportEvent:
     gender_age_info: dict = field(default_factory=dict)
 
     def __str__(self) -> str:
-        return f"""id: {self.id}
-sport: {self.sport_type}
-subtype: {self.sport_subtype}
-name: {self.name}
-dates: {self.dates}
-description: {self.description}
-location: {self.location}
-participants: {self.participants}
-page: {self.page_number}
-order: {self.event_order}"""
+        details = [
+            f"id: {self.id}",
+            f"sport: {self.sport_type}",
+            f"subtype: {self.sport_subtype}",
+            f"name: {self.name}" if self.name else "",
+            f"dates: {self.dates}" if self.dates.from_ or self.dates.to else "",
+            f"description: {self.description}" if self.description else "",
+            f"location: {self.location}" if self.location else "",
+            f"participants: {self.participants}" if self.participants > 0 else "",
+            f"page: {self.page_number}",
+            f"order: {self.event_order}",
+        ]
+        return "\n".join(filter(bool, details))
 
 
 def sport_event_to_dict(event: SportEvent) -> dict:
+    """
+    Преобразует объект SportEvent в словарь.
+    """
     event_dict = asdict(event)
 
     if "dates" in event_dict:

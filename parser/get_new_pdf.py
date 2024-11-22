@@ -33,7 +33,6 @@ def open_page(driver, url):
     driver.get(url)
 
 
-
 # Поиск заголовка "II часть ЕКП"
 def find_ii_part_header(driver):
     """
@@ -62,7 +61,9 @@ def find_ii_part_container(header_element):
     """
     try:
         logging.debug("Ищем контейнер для 'II часть ЕКП'")
-        return header_element.find_element(By.XPATH, "./ancestor::div[@class='wrapper']")
+        return header_element.find_element(
+            By.XPATH, "./ancestor::div[@class='wrapper']"
+        )
     except Exception as e:
         logging.error(f"Не удалось найти контейнер для 'II часть ЕКП': {e}")
 
@@ -127,7 +128,7 @@ def extract_link(file_items, index):
     :param file_items: Список WebElements файлов.
     :param index: Индекс каталога.
     :return: Дата обновления и ссылка на PDF, если найдены.
-    """    
+    """
     for file_index, file_item in enumerate(file_items, start=1):
         try:
             text_elem = file_item.find_element(By.TAG_NAME, "p")

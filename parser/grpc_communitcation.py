@@ -3,21 +3,23 @@ import event_service_pb2
 import event_service_pb2_grpc
 from typing import List
 from lib import SportEvent
-from config import GRPC_SERVER_ADDRESS
+from config import EVENT_SERVICE_ADDRESS
 from logger import logging
+
 
 def get_grpc_stub():
     """
     Создает и возвращает gRPC-клиентский объект (stub) для взаимодействия с сервером.
     """
-    channel = grpc.insecure_channel(GRPC_SERVER_ADDRESS)
+    channel = grpc.insecure_channel(EVENT_SERVICE_ADDRESS)
     stub = event_service_pb2_grpc.EventServiceStub(channel)
     return stub
+
 
 def send_events_via_grpc(events: List[SportEvent]):
     """
     Отправляет список спортивных событий на gRPC-сервер.
-    
+
     :param events: Список объектов SportEvent для отправки.
     """
     stub = get_grpc_stub()
@@ -35,8 +37,7 @@ def send_events_via_grpc(events: List[SportEvent]):
                     name=event.name,
                     description=event.description,
                     dates=event_service_pb2.DateRange(
-                        date_from=event.dates.from_, 
-                        date_to=event.dates.to
+                        date_from=event.dates.from_, date_to=event.dates.to
                     ),
                     location=event.location,
                     participants=event.participants,

@@ -1,5 +1,6 @@
 import schedule
 import time
+from config import PROCESS_ON_STARTUP
 from logger import logging
 from process_pdf import process_pdf
 
@@ -15,10 +16,15 @@ def run_task():
     except Exception as e:
         logging.error(f"Ошибка при выполнении process_pdf: {e}", exc_info=True)
 
+
 def main():
     """
     Основная функция запуска планировщика задач.
-    """    
+    """
+
+    if PROCESS_ON_STARTUP:
+        run_task()
+
     schedule.every().day.at("00:00").do(run_task)
 
     logging.info("Планировщик запущен. Ожидание задач...")
@@ -30,6 +36,7 @@ def main():
         except Exception as e:
             logging.error(f"Ошибка в планировщике: {e}", exc_info=True)
         time.sleep(1)
+
 
 if __name__ == "__main__":
     main()
