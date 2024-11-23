@@ -48,6 +48,7 @@ func (h *Server) setup() {
 	// authguard := middleware.RequireAuth(h.as, h.cfg)
 
 	h.GET("/", handlers.Events(h.es) /*, tokguard(), authguard()*/)
+	h.GET("/:id", handlers.Event(h.es) /*, tokguard(), authguard()*/)
 }
 
 func (h *Server) Run(ctx context.Context) error {

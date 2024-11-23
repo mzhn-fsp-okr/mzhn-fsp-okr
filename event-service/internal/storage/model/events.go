@@ -19,4 +19,5 @@ type EventsFilters struct {
 	Location        *string
 	StartDate       *time.Time
 	EndDate         *time.Time
+	Name            *string
 }

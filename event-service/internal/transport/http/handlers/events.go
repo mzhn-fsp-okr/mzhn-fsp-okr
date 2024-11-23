@@ -25,6 +25,7 @@ type EventsRequest struct {
 	MinParticipants *int     `query:"min_participants"`
 	MaxParticipants *int     `query:"max_participants"`
 	Location        *string  `query:"location"`
+	Name            *string  `query:"name"`
 }
 
 type EventsResponse struct {
@@ -86,6 +87,7 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 		filters.Location = req.Location
 		filters.SportTypesId = req.SportTypeId
 		filters.SportSubtypesId = req.SportSubtypeId
+		filters.Name = req.Name
 
 		res := EventsResponse{}
 

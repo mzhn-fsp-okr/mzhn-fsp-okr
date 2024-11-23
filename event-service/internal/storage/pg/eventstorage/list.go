@@ -49,6 +49,10 @@ func (s *Storage) applyListFilters(qb sq.SelectBuilder, filters model.EventsFilt
 		qb = qb.Where(sq.ILike{"e.location": fmt.Sprintf("%%%s%%", *filters.Location)})
 	}
 
+	if filters.Name != nil {
+		qb = qb.Where(sq.ILike{"e.location": fmt.Sprintf("%%%s%%", *filters.Name)})
+	}
+
 	if filters.MinParticipants != nil {
 		qb = qb.Where(sq.GtOrEq{"e.participants": *filters.MinParticipants})
 	}
