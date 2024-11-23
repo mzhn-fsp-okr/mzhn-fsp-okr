@@ -1,16 +1,16 @@
 package model
 
 type SportType struct {
-	Id   string
-	Name string
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type Subtype struct {
-	Id   string
-	Name string
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type SportTypeWithSubtypes struct {
 	SportType
-	Subtypes []Subtype
+	Subtypes []Subtype `json:"subtypes"`
 }
