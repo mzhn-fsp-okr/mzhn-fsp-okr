@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/fetch";
+import moment from "moment";
 import { SearchResponse } from "./events";
 
 export async function eventSubscribe(id: string) {
@@ -35,6 +36,12 @@ export async function events() {
       ...e.sportSubtype,
       // @ts-expect-error ---
       sportType: e.sportSubtype.parent,
+    },
+    dates: {
+      // @ts-expect-error ---
+      from: moment(e.dates.date_from, "DD.MM.YYYY").format("YYYY-MM-DD"),
+      // @ts-expect-error ---
+      to: moment(e.dates.date_to, "DD.MM.YYYY").format("YYYY-MM-DD"),
     },
   }));
 }

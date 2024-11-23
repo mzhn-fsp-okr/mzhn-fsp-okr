@@ -55,6 +55,7 @@ export default function PageContent({ sports }: { sports: SportTypeAlt[] }) {
   );
 
   useEffect(() => {
+    setName(filters.name ?? name);
     setSportInit(true);
   }, [filters]);
 

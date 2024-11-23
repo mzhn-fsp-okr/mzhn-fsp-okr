@@ -7,7 +7,7 @@ import EventCard from "./event-card";
 const listVariants = cva("grid gap-2 ", {
   variants: {
     variant: {
-      default: "grid-cols-2 md:grid-cols-3",
+      default: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
       list: "grid-cols-1",
       calendar: "grid-cols-1",
       map: "grid-cols-1",

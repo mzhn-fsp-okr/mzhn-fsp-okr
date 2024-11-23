@@ -9,7 +9,7 @@ export function replaceEmpty<
 } {
   return Object.fromEntries(
     Object.entries(obj).filter(
-      ([key, value]) => value !== "" && value !== undefined
+      ([key, value]) => value !== "" && value != undefined
     )
   );
 }
