@@ -94,6 +94,10 @@ func (s *EventsService) ConnectionString() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
+type Verificator struct {
+	TTL int `env:"VERIFICATOR_TTL" env-default:"10"`
+}
+
 type Config struct {
 	Env                 string `env:"ENV" env-default:"local"`
 	App                 App
@@ -104,6 +108,7 @@ type Config struct {
 	AuthService         AuthService
 	SubscriptionService SubscriptionService
 	EventsService       EventsService
+	Verificator         Verificator
 }
 
 func New() *Config {

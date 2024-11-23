@@ -42,6 +42,8 @@ func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
 					continue
 				}
 
+				log.Info("received message", slog.Any("message", msg))
+
 				if err := a.ns.ProcessUpcomingEvent(ctx, &msg); err != nil {
 					log.Error("failed to process upcoming event", sl.Err(err), slog.String("body", string(body)))
 					continue

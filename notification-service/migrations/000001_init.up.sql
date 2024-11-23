@@ -5,3 +5,9 @@ create table if not exists integrations(
   telegram_username varchar,
   wanna_mail boolean not null default true
 );
+
+create table if not exists verification (
+  user_id uuid primary key,
+  token varchar not null,
+  created_at timestamp default now()
+);

@@ -23,6 +23,7 @@ import (
 	"mzhn/notification-service/internal/storage/grpc/eventsapi"
 	"mzhn/notification-service/internal/storage/grpc/subscribersapi"
 	"mzhn/notification-service/internal/storage/pg/integrationstorage"
+	"mzhn/notification-service/internal/storage/pg/verificationstorage"
 	amqp2 "mzhn/notification-service/internal/transport/amqp"
 	"mzhn/notification-service/internal/transport/grpc"
 	"mzhn/notification-service/internal/transport/http"
@@ -52,7 +53,8 @@ func New() (*App, func(), error) {
 		return nil, nil, err
 	}
 	storage := integrationstorage.New(configConfig, pool)
-	integrationserviceService := integrationservice.New(configConfig, storage, storage)
+	verificationstorageStorage := verificationstorage.New(configConfig, pool)
+	integrationserviceService := integrationservice.New(configConfig, storage, storage, verificationstorageStorage, verificationstorageStorage)
 	server := http.New(configConfig, service, integrationserviceService)
 	channel, cleanup2, err := _amqp(configConfig)
 	if err != nil {

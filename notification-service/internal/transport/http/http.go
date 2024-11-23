@@ -50,6 +50,7 @@ func (h *Server) setup() {
 
 	h.GET("/", handlers.ProfileIntegrations(h.is), tokguard(), authguard())
 	h.PUT("/", handlers.UpdateIntegrations(h.is), tokguard(), authguard())
+	h.GET("/telegram/code", handlers.GetToken(h.is), tokguard(), authguard())
 }
 
 func (h *Server) Run(ctx context.Context) error {

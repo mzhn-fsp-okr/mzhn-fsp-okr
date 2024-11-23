@@ -8,7 +8,7 @@ type Pagination struct {
 }
 
 type EventsFilters struct {
-	Pagination
+	*Pagination
 	SportTypesId    []string
 	SportSubtypesId []string
 	MinAge          *int

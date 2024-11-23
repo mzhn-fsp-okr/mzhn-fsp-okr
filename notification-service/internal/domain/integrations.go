@@ -11,3 +11,9 @@ type SetIntegrations struct {
 	TelegramUsername *string
 	WannaMail        *bool
 }
+
+type LinkTelegramRequest struct {
+	UserId           string
+	Token            string
+	TelegramUsername string
+}

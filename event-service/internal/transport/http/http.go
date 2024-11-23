@@ -7,6 +7,7 @@ import (
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/services/authservice"
 	"mzhn/event-service/internal/services/eventservice"
+	"mzhn/event-service/internal/services/sportservice"
 	"mzhn/event-service/internal/transport/http/handlers"
 	"mzhn/event-service/pkg/sl"
 	"strings"
@@ -23,15 +24,22 @@ type Server struct {
 
 	as *authservice.Service
 	es *eventservice.Service
+	ss *sportservice.Service
 }
 
-func New(cfg *config.Config, as *authservice.Service, es *eventservice.Service) *Server {
+func New(
+	cfg *config.Config,
+	as *authservice.Service,
+	es *eventservice.Service,
+	ss *sportservice.Service,
+) *Server {
 	return &Server{
 		Echo:   echo.New(),
 		logger: slog.Default().With(sl.Module("http")),
 		cfg:    cfg,
 		as:     as,
 		es:     es,
+		ss:     ss,
 	}
 }
 
@@ -49,6 +57,8 @@ func (h *Server) setup() {
 
 	h.GET("/", handlers.Events(h.es) /*, tokguard(), authguard()*/)
 	h.GET("/:id", handlers.Event(h.es) /*, tokguard(), authguard()*/)
+
+	h.GET("/sports/", handlers.Sports(h.ss) /*, tokguard(), authguard()*/)
 }
 
 func (h *Server) Run(ctx context.Context) error {
