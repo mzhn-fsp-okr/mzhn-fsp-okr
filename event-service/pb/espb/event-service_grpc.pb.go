@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -24,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type EventServiceClient interface {
 	Load(ctx context.Context, opts ...grpc.CallOption) (EventService_LoadClient, error)
 	Events(ctx context.Context, opts ...grpc.CallOption) (EventService_EventsClient, error)
+	GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (EventService_GetUpcomingEventsClient, error)
 }
 
 type eventServiceClient struct {
@@ -99,12 +101,45 @@ func (x *eventServiceEventsClient) Recv() (*EventResponse, error) {
 	return m, nil
 }
 
+func (c *eventServiceClient) GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (EventService_GetUpcomingEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[2], "/events.EventService/GetUpcomingEvents", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventServiceGetUpcomingEventsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type EventService_GetUpcomingEventsClient interface {
+	Recv() (*UpcomingEventResponse, error)
+	grpc.ClientStream
+}
+
+type eventServiceGetUpcomingEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventServiceGetUpcomingEventsClient) Recv() (*UpcomingEventResponse, error) {
+	m := new(UpcomingEventResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // EventServiceServer is the server API for EventService service.
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
 type EventServiceServer interface {
 	Load(EventService_LoadServer) error
 	Events(EventService_EventsServer) error
+	GetUpcomingEvents(*emptypb.Empty, EventService_GetUpcomingEventsServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -117,6 +152,9 @@ func (UnimplementedEventServiceServer) Load(EventService_LoadServer) error {
 }
 func (UnimplementedEventServiceServer) Events(EventService_EventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method Events not implemented")
+}
+func (UnimplementedEventServiceServer) GetUpcomingEvents(*emptypb.Empty, EventService_GetUpcomingEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetUpcomingEvents not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
@@ -183,6 +221,27 @@ func (x *eventServiceEventsServer) Recv() (*EventRequest, error) {
 	return m, nil
 }
 
+func _EventService_GetUpcomingEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventServiceServer).GetUpcomingEvents(m, &eventServiceGetUpcomingEventsServer{stream})
+}
+
+type EventService_GetUpcomingEventsServer interface {
+	Send(*UpcomingEventResponse) error
+	grpc.ServerStream
+}
+
+type eventServiceGetUpcomingEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventServiceGetUpcomingEventsServer) Send(m *UpcomingEventResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -201,6 +260,11 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _EventService_Events_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "GetUpcomingEvents",
+			Handler:       _EventService_GetUpcomingEvents_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "proto/event-service.proto",

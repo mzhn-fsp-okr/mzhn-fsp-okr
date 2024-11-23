@@ -18,10 +18,10 @@ import (
 var _ espb.EventServiceServer = (*Server)(nil)
 
 type Server struct {
-	*espb.UnimplementedEventServiceServer
 	cfg *config.Config
 	l   *slog.Logger
 	es  *eventservice.Service
+	*espb.UnimplementedEventServiceServer
 }
 
 func New(cfg *config.Config, es *eventservice.Service) *Server {

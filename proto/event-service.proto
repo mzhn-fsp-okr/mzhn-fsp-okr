@@ -56,3 +56,8 @@ message EventRequest {
 message EventResponse {
   EventInfo info = 1;
 }
+
+message UpcomingEventResponse {
+  EventInfo event = 1;  
+  uint32 daysLeft = 2; // Кол-во дней до эвента
+}
