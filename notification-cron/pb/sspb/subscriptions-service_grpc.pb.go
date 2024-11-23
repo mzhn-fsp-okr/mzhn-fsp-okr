@@ -30,7 +30,7 @@ const (
 type SubscriptionServiceClient interface {
 	GetUsersSubscribedToSport(ctx context.Context, in *SubscriptionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SubscriptionResponse], error)
 	GetUsersSubscribedToEvent(ctx context.Context, in *SubscriptionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SubscriptionResponse], error)
-	GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (*UsersEventByDaysResponse, error)
+	GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[UsersEventByDaysResponse], error)
 }
 
 type subscriptionServiceClient struct {
@@ -79,15 +79,24 @@ func (c *subscriptionServiceClient) GetUsersSubscribedToEvent(ctx context.Contex
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SubscriptionService_GetUsersSubscribedToEventClient = grpc.ServerStreamingClient[SubscriptionResponse]
 
-func (c *subscriptionServiceClient) GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (*UsersEventByDaysResponse, error) {
+func (c *subscriptionServiceClient) GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[UsersEventByDaysResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UsersEventByDaysResponse)
-	err := c.cc.Invoke(ctx, SubscriptionService_GetUsersFromEventByDaysLeft_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SubscriptionService_ServiceDesc.Streams[2], SubscriptionService_GetUsersFromEventByDaysLeft_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[UsersEventByDaysRequest, UsersEventByDaysResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SubscriptionService_GetUsersFromEventByDaysLeftClient = grpc.ServerStreamingClient[UsersEventByDaysResponse]
 
 // SubscriptionServiceServer is the server API for SubscriptionService service.
 // All implementations must embed UnimplementedSubscriptionServiceServer
@@ -95,7 +104,7 @@ func (c *subscriptionServiceClient) GetUsersFromEventByDaysLeft(ctx context.Cont
 type SubscriptionServiceServer interface {
 	GetUsersSubscribedToSport(*SubscriptionRequest, grpc.ServerStreamingServer[SubscriptionResponse]) error
 	GetUsersSubscribedToEvent(*SubscriptionRequest, grpc.ServerStreamingServer[SubscriptionResponse]) error
-	GetUsersFromEventByDaysLeft(context.Context, *UsersEventByDaysRequest) (*UsersEventByDaysResponse, error)
+	GetUsersFromEventByDaysLeft(*UsersEventByDaysRequest, grpc.ServerStreamingServer[UsersEventByDaysResponse]) error
 	mustEmbedUnimplementedSubscriptionServiceServer()
 }
 
@@ -112,8 +121,8 @@ func (UnimplementedSubscriptionServiceServer) GetUsersSubscribedToSport(*Subscri
 func (UnimplementedSubscriptionServiceServer) GetUsersSubscribedToEvent(*SubscriptionRequest, grpc.ServerStreamingServer[SubscriptionResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method GetUsersSubscribedToEvent not implemented")
 }
-func (UnimplementedSubscriptionServiceServer) GetUsersFromEventByDaysLeft(context.Context, *UsersEventByDaysRequest) (*UsersEventByDaysResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUsersFromEventByDaysLeft not implemented")
+func (UnimplementedSubscriptionServiceServer) GetUsersFromEventByDaysLeft(*UsersEventByDaysRequest, grpc.ServerStreamingServer[UsersEventByDaysResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GetUsersFromEventByDaysLeft not implemented")
 }
 func (UnimplementedSubscriptionServiceServer) mustEmbedUnimplementedSubscriptionServiceServer() {}
 func (UnimplementedSubscriptionServiceServer) testEmbeddedByValue()                             {}
@@ -158,23 +167,16 @@ func _SubscriptionService_GetUsersSubscribedToEvent_Handler(srv interface{}, str
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SubscriptionService_GetUsersSubscribedToEventServer = grpc.ServerStreamingServer[SubscriptionResponse]
 
-func _SubscriptionService_GetUsersFromEventByDaysLeft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UsersEventByDaysRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _SubscriptionService_GetUsersFromEventByDaysLeft_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(UsersEventByDaysRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(SubscriptionServiceServer).GetUsersFromEventByDaysLeft(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SubscriptionService_GetUsersFromEventByDaysLeft_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubscriptionServiceServer).GetUsersFromEventByDaysLeft(ctx, req.(*UsersEventByDaysRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(SubscriptionServiceServer).GetUsersFromEventByDaysLeft(m, &grpc.GenericServerStream[UsersEventByDaysRequest, UsersEventByDaysResponse]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SubscriptionService_GetUsersFromEventByDaysLeftServer = grpc.ServerStreamingServer[UsersEventByDaysResponse]
 
 // SubscriptionService_ServiceDesc is the grpc.ServiceDesc for SubscriptionService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -182,12 +184,7 @@ func _SubscriptionService_GetUsersFromEventByDaysLeft_Handler(srv interface{}, c
 var SubscriptionService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "subscriptions.SubscriptionService",
 	HandlerType: (*SubscriptionServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetUsersFromEventByDaysLeft",
-			Handler:    _SubscriptionService_GetUsersFromEventByDaysLeft_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetUsersSubscribedToSport",
@@ -197,6 +194,11 @@ var SubscriptionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetUsersSubscribedToEvent",
 			Handler:       _SubscriptionService_GetUsersSubscribedToEvent_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetUsersFromEventByDaysLeft",
+			Handler:       _SubscriptionService_GetUsersFromEventByDaysLeft_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -29,11 +29,46 @@ type Cron struct {
 	Minutes int `env:"INTERVAL" env-default:"20"` // in minutes
 }
 
+type Amqp struct {
+	Host string `env:"AMQP_HOST" env-required:"true"`
+	Port int    `env:"AMQP_PORT" env-required:"true"`
+	User string `env:"AMQP_USER" env-required:"true"`
+	Pass string `env:"AMQP_PASS" env-required:"true"`
+
+	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-required:"true"`
+	UpcomingQueue         string `env:"AMQP_UPCOMING_EVENTS_QUEUE" env-required:"true"`
+}
+
+func (am *Amqp) ConnectionString() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d", am.User, am.Pass, am.Host, am.Port)
+}
+
+type EventService struct {
+	Host string `env:"EVENT_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"EVENT_SERVICE_PORT" env-required:"true"`
+}
+
+func (as *EventService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", as.Host, as.Port)
+}
+
+type SubscriptionsService struct {
+	Host string `env:"SUBSCRIPTIONS_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"SUBSCRIPTIONS_SERVICE_PORT" env-required:"true"`
+}
+
+func (as *SubscriptionsService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", as.Host, as.Port)
+}
+
 type Config struct {
-	Env         string `env:"ENV" env-default:"local"`
-	App         App
-	AuthService AuthService
-	Cron        Cron
+	Env                  string `env:"ENV" env-default:"local"`
+	App                  App
+	AuthService          AuthService
+	EventService         EventService
+	SubscriptionsService SubscriptionsService
+	Cron                 Cron
+	Amqp                 Amqp
 }
 
 func New() *Config {

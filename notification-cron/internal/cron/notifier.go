@@ -29,7 +29,7 @@ func New(cfg *config.Config, cs domain.CronService) *CronHandler {
 }
 
 func (h *CronHandler) Run(ctx context.Context) error {
-	h.setup()
+	h.setup(ctx)
 	s, err := gocron.NewScheduler()
 	if err != nil {
 		h.l.Error("cannot start cron scheduler")
@@ -48,8 +48,12 @@ func (h *CronHandler) Run(ctx context.Context) error {
 	return nil
 }
 
-func (h *CronHandler) setup() {
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, 30))
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, 7))
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, 3))
+func (h *CronHandler) setup(ctx context.Context) {
+	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 30))
+	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 7))
+	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 3))
+
+	for _, daysLeft := range []int{30, 7, 3} {
+		go h.cs.NotifyUsers(ctx, uint32(daysLeft))
+	}
 }

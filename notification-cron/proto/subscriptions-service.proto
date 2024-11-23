@@ -13,7 +13,7 @@ enum DaysLeft {
 service SubscriptionService {
     rpc GetUsersSubscribedToSport(SubscriptionRequest) returns (stream SubscriptionResponse);
     rpc GetUsersSubscribedToEvent(SubscriptionRequest) returns (stream SubscriptionResponse);
-    rpc GetUsersFromEventByDaysLeft(UsersEventByDaysRequest) returns (UsersEventByDaysResponse);
+    rpc GetUsersFromEventByDaysLeft(UsersEventByDaysRequest) returns (stream UsersEventByDaysResponse);
 }
 
 message SubscriptionRequest {
