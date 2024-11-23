@@ -28,6 +28,8 @@ func (s *Storage) Count(ctx context.Context, filters model.EventsFilters) (int64
 	qb := sq.
 		Select("count(*)").
 		From(fmt.Sprintf("%s e", pg.EVENTS)).
+		InnerJoin(fmt.Sprintf("%s sst on e.sport_subtype_id = sst.id", pg.SPORT_SUBTYPES)).
+		InnerJoin(fmt.Sprintf("%s st on sst.sport_type_id = st.id", pg.SPORT_TYPES)).
 		InnerJoin(fmt.Sprintf("%s ed on ed.event_id = e.id", pg.EVENT_DATES)).
 		PlaceholderFormat(sq.Dollar)
 
