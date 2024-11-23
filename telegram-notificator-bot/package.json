@@ -1,0 +1,53 @@
+{
+  "name": "chatbot-tg",
+  "version": "1.0.0",
+  "description": "TG Support Bot",
+  "main": "app.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "npm run build:ts && node dist/src/app.js",
+    "build:ts": "tsc",
+    "watch:ts": "tsc -w",
+    "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
+    "dev:start": "node dist/src/app.js",
+    "format": "prettier --check --ignore-path .gitignore .",
+    "format:fix": "prettier --write --ignore-path .gitignore .",
+    "migrate": "tsc && node dist/src/migrate.js",
+    "protobuf": "protoc --ts_out src/grpc/proto --ts_opt long_type_string --proto_path ../proto ../proto/notifications-service.proto "
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.12.2",
+    "@protobuf-ts/grpc-transport": "^2.9.4",
+    "@protobuf-ts/plugin": "^2.9.4",
+    "@protobuf-ts/runtime": "^2.9.4",
+    "@telegraf/session": "^2.0.0-beta.7",
+    "amqplib": "^0.10.4",
+    "axios": "^1.7.7",
+    "better-sqlite3": "^9.6.0",
+    "dotenv": "^16.4.5",
+    "kysely": "^0.27.2",
+    "moment": "^2.30.1",
+    "pino": "^9.4.0",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@grpc/proto-loader": "^0.7.13",
+    "@types/amqplib": "^0.10.5",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.1.0",
+    "c8": "^10.1.2",
+    "concurrently": "^9.0.0",
+    "fastify-tsconfig": "^2.0.0",
+    "grpc-tools": "^1.12.4",
+    "prettier": "^3.3.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "ts-node": "^10.4.0",
+    "ts-proto": "^2.3.0",
+    "typescript": "^5.2.2"
+  }
+}

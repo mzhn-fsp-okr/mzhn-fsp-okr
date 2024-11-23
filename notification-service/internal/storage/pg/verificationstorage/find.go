@@ -2,6 +2,7 @@ package verificationstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"mzhn/notification-service/internal/storage/model"
@@ -9,11 +10,57 @@ import (
 	"mzhn/notification-service/pkg/sl"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5"
 )
 
-func (s *Storage) Find(ctx context.Context, userId string) (*model.Verification, error) {
-	return s.find(ctx, userId)
+func (s *Storage) Find(ctx context.Context, token string) (*model.Verification, error) {
+	return s.find(ctx, token)
+}
+
+func (s *Storage) FindByToken(ctx context.Context, token string) (*model.Verification, error) {
+	fn := "verificationstorage.findByToken"
+	log := s.l.With(sl.Module(fn))
+
+	c, err := s.pool.Acquire(ctx)
+	if err != nil {
+		log.Error("failed to acquire connection", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+	defer c.Release()
+
+	qb := sq.
+		Select("user_id", "token", "created_at").
+		From(pg.VERIFICATIONS).
+		Where(sq.Eq{"token": token}).
+		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := qb.ToSql()
+	if err != nil {
+
+		log.Error("failed to build query", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	log.Debug("executing query", slog.String("sql", sql), slog.Any("args", args))
+
+	i := new(model.Verification)
+	if err := c.
+		QueryRow(ctx, sql, args...).
+		Scan(
+			&i.UserId,
+			&i.Token,
+			&i.CreatedAt,
+		); err != nil {
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		log.Error("failed to execute query", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return i, nil
 }
 
 func (s *Storage) find(ctx context.Context, userId string) (*model.Verification, error) {
@@ -35,6 +82,7 @@ func (s *Storage) find(ctx context.Context, userId string) (*model.Verification,
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
+
 		log.Error("failed to build query", sl.Err(err))
 		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
@@ -49,7 +97,8 @@ func (s *Storage) find(ctx context.Context, userId string) (*model.Verification,
 			&i.Token,
 			&i.CreatedAt,
 		); err != nil {
-		if err == pgx.ErrNoRows {
+
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 

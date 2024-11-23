@@ -1,0 +1,12 @@
+services:
+  bot:
+    container_name: chatbot-tg
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      - botdata:/app/data
+
+volumes:
+  botdata:
