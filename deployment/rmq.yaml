@@ -1,6 +1,6 @@
 services:
   rmq:
-    container_name: rabbitmq
+    container_name: mzhn-rabbitmq
     image: rabbitmq:3-management
     volumes:
       - rmq-data:/data

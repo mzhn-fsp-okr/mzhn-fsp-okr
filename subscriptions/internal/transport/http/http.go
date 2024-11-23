@@ -43,12 +43,18 @@ func (h *Server) setup() {
 		AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
 		AllowCredentials: true,
 	}))
-	h.Echo.Validator = &CustomValidator{}
+	h.Validator = &CustomValidator{}
 
 	tokguard := middleware.Token()
 	authguard := middleware.RequireAuth(h.as, h.cfg)
+	sport := h.Group("/sport", tokguard(), authguard())
+	sport.POST("/subscribe", handlers.SubscribeToSport(h.ss))
+	sport.POST("/unsubscribe", handlers.UnsubscribeFromSport(h.ss))
 
-	h.POST("/", handlers.CreateSubscriptionToSport(h.ss), tokguard(), authguard())
+	event := h.Group("/event", tokguard(), authguard())
+	event.GET("/", handlers.GetUserEvents(h.ss))
+	event.POST("/subscribe", handlers.SubscribeToEvent(h.ss))
+	event.POST("/unsubscribe", handlers.UnsubscribeFromEvent(h.ss))
 }
 
 func (h *Server) Run(ctx context.Context) error {
