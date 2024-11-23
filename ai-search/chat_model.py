@@ -5,6 +5,8 @@ from config import (
     GIGACHAT_SCOPE,
     GIGACHAT_CREDENTIALS,
     GIGACHAT_MODEL,
+    
+    OLLAMA_MODEL
 )
 
 chat: BaseChatModel = None
@@ -23,6 +25,15 @@ if HUGGINGFACE_MODEL:
     )
 
     chat = ChatHuggingFace(llm=llm)
+
+elif OLLAMA_MODEL:
+    from langchain_ollama import ChatOllama
+
+    chat = ChatOllama(
+        model=OLLAMA_MODEL,
+        temperature=0.7,
+        max_tokens=512,
+    )
 
 else:
     from langchain_gigachat import GigaChat

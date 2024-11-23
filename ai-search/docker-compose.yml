@@ -1,4 +1,0 @@
-services:
-  vllm:
-    image: openeuler/vllm-cpu:0.6.3-oe2403lts
-    network_mode: host
