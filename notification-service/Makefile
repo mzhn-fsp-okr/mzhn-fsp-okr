@@ -7,25 +7,15 @@ build: gen
 	go build -o ./bin/app.exe ./cmd/app
 
 run: build
-	./bin/app.exe -local
+	./bin/app
 
 PB=pb
-ESPB=$(PB)/espb
-ESPROTO=proto/event-service.proto
 AUTHPB=$(PB)/authpb
 AUTHPROTO=proto/auth.proto
-SUBPB=$(PB)/sspb
-SUBPROTO=proto/subscriptions-service.proto
+SBPB=$(PB)/sspb
+SBPROTO=proto/subscriptions-service.proto
 protobuf:
 	cp -r ../proto .
-
-	protoc  \
-		--go_out=. \
-		--go_opt=M$(ESPROTO)=$(ESPB) \
-		--go-grpc_out=. \
-		--go-grpc_opt=M$(ESPROTO)=$(ESPB) \
-		$(ESPROTO)
-	
 	protoc  \
 		--go_out=. \
 		--go_opt=M$(AUTHPROTO)=$(AUTHPB) \
@@ -35,10 +25,10 @@ protobuf:
 
 	protoc  \
 		--go_out=. \
-		--go_opt=M$(SUBPROTO)=$(SUBPB) \
+		--go_opt=M$(SBPROTO)=$(SBPB) \
 		--go-grpc_out=. \
-		--go-grpc_opt=M$(SUBPROTO)=$(SUBPB) \
-		$(SUBPROTO)
+		--go-grpc_opt=M$(SBPROTO)=$(SBPB) \
+		$(SBPROTO)
 
 wire-gen:
 	wire ./internal/app
