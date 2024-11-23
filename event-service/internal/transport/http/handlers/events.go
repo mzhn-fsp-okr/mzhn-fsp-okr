@@ -21,6 +21,7 @@ type EventsRequest struct {
 
 type EventsResponse struct {
 	Events []domain.EventInfo `json:"events"`
+	Total  int64              `json:"total"`
 }
 
 func Events(es *eventservice.Service) echo.HandlerFunc {
@@ -84,6 +85,13 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 			log.Error("failed to list events", sl.Err(err))
 			return err
 		}
+
+		count, err := es.Count(ctx, filters)
+		if err != nil {
+			log.Error("failed to count events", sl.Err(err))
+			return err
+		}
+		res.Total = count
 
 		return c.JSON(200, res)
 	}

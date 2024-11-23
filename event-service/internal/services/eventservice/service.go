@@ -13,6 +13,7 @@ import (
 type EventProvider interface {
 	Find(ctx context.Context, id string) (*domain.EventInfo, error)
 	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error
+	Count(ctx context.Context, filters model.EventsFilters) (int64, error)
 }
 
 type EventManager interface {
@@ -91,6 +92,19 @@ func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 	}
 
 	return nil
+}
+
+func (s *Service) Count(ctx context.Context, filters model.EventsFilters) (int64, error) {
+	fn := "EventService.Count"
+	log := s.l.With(sl.Method(fn))
+
+	count, err := s.ep.Count(ctx, filters)
+	if err != nil {
+		log.Error("failed to count events", sl.Err(err))
+		return 0, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return count, nil
 }
 
 func (s *Service) Stale(ctx context.Context) error {

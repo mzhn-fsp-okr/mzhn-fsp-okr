@@ -12,6 +12,27 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
+func (s *Storage) applyListFilters(qb sq.SelectBuilder, filters model.EventsFilters) sq.SelectBuilder {
+
+	if filters.Limit != nil {
+		qb = qb.Limit(*filters.Limit)
+	}
+
+	if filters.Offset != nil {
+		qb = qb.Offset(*filters.Offset)
+	}
+
+	if filters.StartDate != nil {
+		qb = qb.Where(sq.GtOrEq{"ed.date_from": *filters.StartDate})
+	}
+
+	if filters.EndDate != nil {
+		qb = qb.Where(sq.LtOrEq{"ed.date_from": *filters.EndDate})
+	}
+
+	return qb
+}
+
 func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
 
 	fn := "EventStorage.List"
@@ -34,22 +55,7 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 		InnerJoin(fmt.Sprintf("%s ed on ed.event_id = e.id", pg.EVENT_DATES)).
 		OrderBy("ed.date_from ASC").
 		PlaceholderFormat(sq.Dollar)
-
-	if filters.Limit != nil {
-		qb = qb.Limit(*filters.Limit)
-	}
-
-	if filters.Offset != nil {
-		qb = qb.Offset(*filters.Offset)
-	}
-
-	if filters.StartDate != nil {
-		qb = qb.Where(sq.GtOrEq{"ed.date_from": *filters.StartDate})
-	}
-
-	if filters.EndDate != nil {
-		qb = qb.Where(sq.LtOrEq{"ed.date_from": *filters.EndDate})
-	}
+	qb = s.applyListFilters(qb, filters)
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
