@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 export async function apiFetch<T>(
   url: string,
   body?: unknown,
@@ -9,7 +7,6 @@ export async function apiFetch<T>(
   baseUrl ??= process.env.NEXT_PUBLIC_SELF_URL!;
 
   const headers = new Headers(options.headers ?? {});
-  headers.set("Cookie", cookies().toString());
   headers.set("Content-Type", "application/json");
 
   const requestOptions = {

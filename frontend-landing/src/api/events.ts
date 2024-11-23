@@ -26,6 +26,7 @@ export interface SportEvent {
 export interface SearchParams {
   page?: number;
   page_size?: number;
+  name?: string;
   start_date?: string;
   end_date?: string;
   sport_type_id?: string[];
@@ -48,10 +49,26 @@ export interface SearchResponse {
   has_next: boolean;
 }
 
+export interface SportTypeAlt {
+  id: string;
+  name: string;
+}
+
 export async function search(data: SearchParams) {
+  const params = new URLSearchParams();
+
+  for (const key in data) {
+    // @ts-expect-error ---
+    if (Array.isArray(data[key])) {
+      // @ts-expect-error ---
+      data[key].forEach((value) => params.append(key, value));
+    } else {
+      // @ts-expect-error ---
+      params.append(key, data[key]);
+    }
+  }
   const result = await apiFetch<SearchResponse>(
-    "/api/events/?" +
-      new URLSearchParams(data as unknown as Record<string, string>).toString()
+    "/api/events?" + params.toString()
   );
 
   result.events = result.events ?? [];
@@ -67,4 +84,11 @@ export async function search(data: SearchParams) {
 export async function get(id: string) {
   const result = await apiFetch<{ events: SportEvent }>(`/api/events/${id}`);
   return result.events;
+}
+
+export async function sports() {
+  const result = await apiFetch<{ sportTypes: SportTypeAlt[] }>(
+    `api/events/sports/`
+  );
+  return result;
 }
