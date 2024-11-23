@@ -37,17 +37,22 @@ func (s *Server) GetUpcomingEvents(req *emptypb.Empty, stream espb.EventService_
 				done <- nil
 				return
 			}
-
 			s.l.Debug("event recieved", slog.Any("event", event))
 
 			response := &espb.UpcomingEventResponse{
 				Event: &espb.EventInfo{
-					Id:           event.Id,
-					EkpId:        event.EkpId,
-					Name:         event.Name,
-					SportType:    event.SportType,
-					SportSubtype: event.SportSubtype,
-					Description:  event.Description,
+					Id:          event.Id,
+					EkpId:       event.EkpId,
+					Name:        event.Name,
+					Description: event.Description,
+					SportSubtype: &espb.SportSubtype{
+						Id:   event.SportSubtype.Id,
+						Name: event.SportSubtype.Name,
+						Parent: &espb.SportSubtype{
+							Id:   event.SportSubtype.Parent.Id,
+							Name: event.SportSubtype.Parent.Name,
+						},
+					},
 					Dates: &espb.DateRange{
 						DateFrom: event.Dates.From.Format("02.01.2006"),
 						DateTo:   event.Dates.To.Format("02.01.2006"),

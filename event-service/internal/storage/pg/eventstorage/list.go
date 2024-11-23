@@ -48,7 +48,7 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 	ctx = context.WithValue(ctx, "tx", conn)
 
 	qb := sq.
-		Select("e.id, e.ekp_id, st.sport_type, sst.sport_subtype, e.name, e.description, e.location, e.participants, ed.date_from, ed.date_to").
+		Select("e.id, e.ekp_id, st.id, st.sport_type, sst.id, sst.sport_subtype, e.name, e.description, e.location, e.participants, ed.date_from, ed.date_to").
 		From(fmt.Sprintf("%s e", pg.EVENTS)).
 		InnerJoin(fmt.Sprintf("%s sst on e.sport_subtype_id = sst.id", pg.SPORT_SUBTYPES)).
 		InnerJoin(fmt.Sprintf("%s st on sst.sport_type_id = st.id", pg.SPORT_TYPES)).
@@ -76,8 +76,10 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 		if err := rows.Scan(
 			&e.Id,
 			&e.EkpId,
-			&e.SportType,
-			&e.SportSubtype,
+			&e.SportSubtype.Parent.Id,
+			&e.SportSubtype.Parent.Name,
+			&e.SportSubtype.Id,
+			&e.SportSubtype.Name,
 			&e.Name,
 			&e.Description,
 			&e.Location,

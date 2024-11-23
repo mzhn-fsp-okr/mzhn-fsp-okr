@@ -45,12 +45,18 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 
 		response := &espb.EventResponse{
 			Info: &espb.EventInfo{
-				Id:           event.Id,
-				EkpId:        event.EkpId,
-				SportType:    event.SportType,
-				SportSubtype: event.SportSubtype,
-				Name:         event.Name,
-				Description:  event.Description,
+				Id:    event.Id,
+				EkpId: event.EkpId,
+				SportSubtype: &espb.SportSubtype{
+					Id:   event.SportSubtype.Id,
+					Name: event.SportSubtype.Name,
+					Parent: &espb.SportSubtype{
+						Id:   event.SportSubtype.Parent.Id,
+						Name: event.SportSubtype.Parent.Name,
+					},
+				},
+				Name:        event.Name,
+				Description: event.Description,
 				Dates: &espb.DateRange{
 					DateFrom: event.Dates.From.Format("02.01.2006"),
 					DateTo:   event.Dates.To.Format("02.01.2006"),
