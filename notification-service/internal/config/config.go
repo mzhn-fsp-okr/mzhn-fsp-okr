@@ -58,23 +58,21 @@ func (pg *Pg) ConnectionString() string {
 }
 
 type AuthService struct {
-	Protocol string `env:"AUTH_SERVICE_PROTOCOL" env-default:"grpc"`
-	Host     string `env:"AUTH_SERVICE_HOST" env-required:"true"`
-	Port     int    `env:"AUTH_SERVICE_PORT" env-required:"true"`
+	Host string `env:"AUTH_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"AUTH_SERVICE_PORT" env-required:"true"`
 }
 
-func (as *AuthService) ConnectionString() string {
-	return fmt.Sprintf("%s://%s:%d", as.Protocol, as.Host, as.Port)
+func (s *AuthService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
 type SubscriptionService struct {
-	Protocol string `env:"SUBSCRIPTION_SERVICE_PROTOCOL" env-default:"grpc"`
-	Host     string `env:"SUBSCRIPTION_SERVICE_HOST" env-required:"true"`
-	Port     int    `env:"SUBSCRIPTION_SERVICE_PORT" env-required:"true"`
+	Host string `env:"SUBSCRIPTION_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"SUBSCRIPTION_SERVICE_PORT" env-required:"true"`
 }
 
 func (s *SubscriptionService) ConnectionString() string {
-	return fmt.Sprintf("%s://%s:%d", s.Protocol, s.Host, s.Port)
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
 type Config struct {

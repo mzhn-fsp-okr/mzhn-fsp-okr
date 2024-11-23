@@ -12,6 +12,8 @@ run: build
 PB=pb
 AUTHPB=$(PB)/authpb
 AUTHPROTO=proto/auth.proto
+SBPB=$(PB)/sspb
+SBPROTO=proto/subscriptions-service.proto
 protobuf:
 	cp -r ../proto .
 	protoc  \
@@ -20,6 +22,13 @@ protobuf:
 		--go-grpc_out=. \
 		--go-grpc_opt=M$(AUTHPROTO)=$(AUTHPB) \
 		$(AUTHPROTO)
+
+	protoc  \
+		--go_out=. \
+		--go_opt=M$(SBPROTO)=$(SBPB) \
+		--go-grpc_out=. \
+		--go-grpc_opt=M$(SBPROTO)=$(SBPB) \
+		$(SBPROTO)
 
 wire-gen:
 	wire ./internal/app

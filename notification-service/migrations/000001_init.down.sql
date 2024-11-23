@@ -1,11 +1,3 @@
-drop table if exists event_participants_requirements;
-
-drop table if exists event_dates;
-
-drop table if exists sport_types;
-
-drop table if exists sport_subtypes;
-
-drop table if exists events;
+drop table if exists integrations;
 
 drop extension if exists "uuid-ossp";
