@@ -36,13 +36,13 @@ func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
 				return
 			case message := <-messages:
 				body := message.Body
-				event := domain.EventInfo{}
-				if err := json.Unmarshal(body, &event); err != nil {
+				msg := domain.UpcomingEventMessage{}
+				if err := json.Unmarshal(body, &msg); err != nil {
 					log.Error("failed to unmarshal event", sl.Err(err))
 					continue
 				}
 
-				if err := a.ns.ProcessUpcomingEvent(ctx, &event); err != nil {
+				if err := a.ns.ProcessUpcomingEvent(ctx, &msg); err != nil {
 					log.Error("failed to process upcoming event", sl.Err(err), slog.String("body", string(body)))
 					continue
 				}

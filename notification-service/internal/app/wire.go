@@ -15,13 +15,17 @@ import (
 	"mzhn/notification-service/internal/services/notificationservice"
 	amqpclient "mzhn/notification-service/internal/storage/amqp"
 	"mzhn/notification-service/internal/storage/grpc/authapi"
+	"mzhn/notification-service/internal/storage/grpc/eventsapi"
 	"mzhn/notification-service/internal/storage/grpc/subscribersapi"
 	"mzhn/notification-service/internal/storage/pg/integrationstorage"
 	amqptransport "mzhn/notification-service/internal/transport/amqp"
 	"mzhn/notification-service/internal/transport/http"
 	"mzhn/notification-service/pb/authpb"
+	"mzhn/notification-service/pb/espb"
 	"mzhn/notification-service/pb/sspb"
 	"mzhn/notification-service/pkg/sl"
+
+	grpcserver "mzhn/notification-service/internal/transport/grpc"
 
 	"github.com/google/wire"
 	_ "github.com/jackc/pgx/stdlib"
@@ -38,6 +42,7 @@ func New() (*App, func(), error) {
 
 		http.New,
 		amqptransport.New,
+		grpcserver.New,
 
 		authservice.New,
 		wire.Bind(new(authservice.ProfileProvider), new(*authapi.Api)),
@@ -47,17 +52,20 @@ func New() (*App, func(), error) {
 
 		notificationservice.New,
 		wire.Bind(new(notificationservice.UserProvider), new(*authapi.Api)),
+		wire.Bind(new(notificationservice.EventProvider), new(*eventsapi.Api)),
 		wire.Bind(new(notificationservice.Notificator), new(*amqpclient.RabbitMQ)),
 		wire.Bind(new(notificationservice.SubscribersProvider), new(*subscribersapi.Api)),
 		wire.Bind(new(notificationservice.IntegrationProvider), new(*integrationstorage.Storage)),
 
 		authapi.New,
 		subscribersapi.New,
+		eventsapi.New,
 		amqpclient.New,
 		integrationstorage.New,
 
 		_authpb,
 		_sspb,
+		_espb,
 		_amqp,
 		_pg,
 		config.New,
@@ -103,13 +111,25 @@ func _sspb(cfg *config.Config) (sspb.SubscriptionServiceClient, error) {
 	return sspb.NewSubscriptionServiceClient(conn), nil
 }
 
+func _espb(cfg *config.Config) (espb.EventServiceClient, error) {
+	addr := cfg.EventsService.ConnectionString()
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	return espb.NewEventServiceClient(conn), nil
+}
+
 func _servers(
 	http *http.Server,
 	amqp *amqptransport.RabbitMqConsumer,
+	grpc *grpcserver.Server,
 ) []Server {
 	servers := make([]Server, 0, 2)
 	servers = append(servers, amqp)
 	servers = append(servers, http)
+	servers = append(servers, grpc)
 	return servers
 }
 

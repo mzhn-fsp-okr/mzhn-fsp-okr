@@ -42,14 +42,14 @@ func (s *Service) ProcessNewEvent(ctx context.Context, event *domain.EventInfo) 
 		}
 
 		if integrations.TelegramUsername != nil {
-			if err := s.notificator.SendTelegram(ctx, *integrations.TelegramUsername, event, domain.NewEvent); err != nil {
+			if err := s.notificator.SendTelegram(ctx, *integrations.TelegramUsername, event, domain.EventTypeNew); err != nil {
 				log.Error("failed sending notification to subscriber (telegram)", sl.Err(err))
 				return fmt.Errorf("%s: %w", fn, err)
 			}
 		}
 
 		if integrations.WannaMail {
-			if err := s.notificator.SendMail(ctx, user.Email, event, domain.NewEvent); err != nil {
+			if err := s.notificator.SendMail(ctx, user.Email, event, domain.EventTypeNew); err != nil {
 				log.Error("failed sending notification to subscriber (mail)", sl.Err(err))
 				return fmt.Errorf("%s: %w", fn, err)
 			}

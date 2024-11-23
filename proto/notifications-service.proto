@@ -1,0 +1,17 @@
+syntax="proto3";
+
+package notifications;
+
+option go_package="mzhn/proto/notifications-service;nspb";
+
+service NotificationService {
+  rpc LinkTelegram(LinkTelegramRequest) returns (LinkTelegramResponse);
+}
+
+message LinkTelegramRequest {
+  string userId = 1;
+  string telegramUsername = 2;
+}
+
+message LinkTelegramResponse{
+}

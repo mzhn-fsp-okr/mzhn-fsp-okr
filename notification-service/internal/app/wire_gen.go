@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rabbitmq/amqp091-go"
-	"google.golang.org/grpc"
+	grpc2 "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"mzhn/notification-service/internal/config"
@@ -20,11 +20,14 @@ import (
 	"mzhn/notification-service/internal/services/notificationservice"
 	"mzhn/notification-service/internal/storage/amqp"
 	"mzhn/notification-service/internal/storage/grpc/authapi"
+	"mzhn/notification-service/internal/storage/grpc/eventsapi"
 	"mzhn/notification-service/internal/storage/grpc/subscribersapi"
 	"mzhn/notification-service/internal/storage/pg/integrationstorage"
 	amqp2 "mzhn/notification-service/internal/transport/amqp"
+	"mzhn/notification-service/internal/transport/grpc"
 	"mzhn/notification-service/internal/transport/http"
 	"mzhn/notification-service/pb/authpb"
+	"mzhn/notification-service/pb/espb"
 	"mzhn/notification-service/pb/sspb"
 	"mzhn/notification-service/pkg/sl"
 	"time"
@@ -64,9 +67,17 @@ func New() (*App, func(), error) {
 	}
 	subscribersapiApi := subscribersapi.New(configConfig, subscriptionServiceClient)
 	rabbitMQ := amqp.New(configConfig, channel)
-	notificationserviceService := notificationservice.New(configConfig, subscribersapiApi, storage, rabbitMQ, api)
+	eventServiceClient, err := _espb(configConfig)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	eventsapiApi := eventsapi.New(configConfig, eventServiceClient)
+	notificationserviceService := notificationservice.New(configConfig, subscribersapiApi, storage, rabbitMQ, api, eventsapiApi)
 	rabbitMqConsumer := amqp2.New(configConfig, channel, notificationserviceService)
-	v := _servers(server, rabbitMqConsumer)
+	grpcServer := grpc.New(configConfig, integrationserviceService)
+	v := _servers(server, rabbitMqConsumer, grpcServer)
 	app := newApp(configConfig, v)
 	return app, func() {
 		cleanup2()
@@ -96,7 +107,7 @@ func _pg(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 
 func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 	addr := cfg.AuthService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +117,7 @@ func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 
 func _sspb(cfg *config.Config) (sspb.SubscriptionServiceClient, error) {
 	addr := cfg.SubscriptionService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -114,11 +125,22 @@ func _sspb(cfg *config.Config) (sspb.SubscriptionServiceClient, error) {
 	return sspb.NewSubscriptionServiceClient(conn), nil
 }
 
-func _servers(http2 *http.Server, amqp3 *amqp2.RabbitMqConsumer,
+func _espb(cfg *config.Config) (espb.EventServiceClient, error) {
+	addr := cfg.EventsService.ConnectionString()
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	return espb.NewEventServiceClient(conn), nil
+}
+
+func _servers(http2 *http.Server, amqp3 *amqp2.RabbitMqConsumer, grpc3 *grpc.Server,
 ) []Server {
 	servers := make([]Server, 0, 2)
 	servers = append(servers, amqp3)
 	servers = append(servers, http2)
+	servers = append(servers, grpc3)
 	return servers
 }
 
