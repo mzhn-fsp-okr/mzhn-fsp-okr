@@ -1,0 +1,34 @@
+syntax="proto3";
+
+package subscriptions;
+
+option go_package="mzhn/proto/subscriptions-service;sspb";
+
+enum DaysLeft {
+    Month = 0;
+    Week = 1;
+    ThreeDays = 2;
+}
+
+service SubscriptionService {
+    rpc GetUsersSubscribedToSport(SubscriptionRequest) returns (stream SubscriptionResponse);
+    rpc GetUsersSubscribedToEvent(SubscriptionRequest) returns (stream SubscriptionResponse);
+    rpc GetUsersFromEventByDaysLeft(UsersEventByDaysRequest) returns (stream UsersEventByDaysResponse);
+}
+
+message SubscriptionRequest {
+    string id = 1;    
+}
+
+message SubscriptionResponse {
+    string userId = 1;
+}
+
+message UsersEventByDaysRequest {
+    string eventId = 1;
+    DaysLeft daysLeft = 2;
+}
+
+message UsersEventByDaysResponse {
+    string userId = 1;
+}

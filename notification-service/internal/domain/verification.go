@@ -3,8 +3,7 @@ package domain
 import "time"
 
 type VerificationRequest struct {
-	UserId string
-	Token  string
+	Token string
 }
 
 type VerificationCodeRequest struct {

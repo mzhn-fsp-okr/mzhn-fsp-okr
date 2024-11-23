@@ -13,7 +13,6 @@ type SetIntegrations struct {
 }
 
 type LinkTelegramRequest struct {
-	UserId           string
-	Token            string
-	TelegramUsername string
+	Token  string
+	ChatId string
 }

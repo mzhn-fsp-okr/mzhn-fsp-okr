@@ -58,7 +58,7 @@ func (h *Server) setup() {
 	h.GET("/", handlers.Events(h.es) /*, tokguard(), authguard()*/)
 	h.GET("/:id", handlers.Event(h.es) /*, tokguard(), authguard()*/)
 
-	h.GET("/sports/", handlers.Sports(h.ss) /*, tokguard(), authguard()*/)
+	h.GET("/sports", handlers.Sports(h.ss) /*, tokguard(), authguard()*/)
 }
 
 func (h *Server) Run(ctx context.Context) error {

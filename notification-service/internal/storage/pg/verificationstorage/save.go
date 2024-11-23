@@ -7,6 +7,7 @@ import (
 	"mzhn/notification-service/internal/storage/model"
 	"mzhn/notification-service/internal/storage/pg"
 	"mzhn/notification-service/pkg/sl"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -15,6 +16,9 @@ func (s *Storage) Save(ctx context.Context, in *model.NewVerification) (*model.V
 	fn := "integrationstorage.Save"
 	log := s.l.With(sl.Method(fn))
 
+	log.Debug("saving user", slog.Any("input", in))
+
+	log.Debug("checking existsing token", slog.String("token", in.Token))
 	i, err := s.find(ctx, in.UserId)
 	if err != nil {
 		log.Error("failed to find user", sl.Err(err))
@@ -22,6 +26,7 @@ func (s *Storage) Save(ctx context.Context, in *model.NewVerification) (*model.V
 	}
 
 	if i != nil {
+		log.Debug("found token! rewriting token", slog.Any("input", in))
 		v, err := s.update(ctx, in)
 		if err != nil {
 			log.Error("failed to update user", sl.Err(err))
@@ -31,6 +36,7 @@ func (s *Storage) Save(ctx context.Context, in *model.NewVerification) (*model.V
 		return v, nil
 	}
 
+	log.Debug("token not found! saving token", slog.Any("input", in))
 	v, err := s.save(ctx, in)
 	if err != nil {
 		log.Error("failed to save user", sl.Err(err))
@@ -88,9 +94,10 @@ func (s *Storage) update(ctx context.Context, in *model.NewVerification) (*model
 	defer c.Release()
 
 	qb := sq.
-		Update(pg.INTEGRATIONS).
+		Update(pg.VERIFICATIONS).
 		Where(sq.Eq{"user_id": in.UserId}).
 		Set("token", in.Token).
+		Set("created_at", time.Now()).
 		Suffix("RETURNING *").
 		PlaceholderFormat(sq.Dollar)
 
