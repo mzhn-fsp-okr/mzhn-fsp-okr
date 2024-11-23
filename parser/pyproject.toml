@@ -28,6 +28,7 @@ requests = "^2.32.3"
 certifi = "^2024.8.30"
 pip-system-certs = "^4.0"
 python-dotenv = "^1.0.1"
+opencv-python-headless = "^4.10.0.84"
 
 [tool.poetry.dev-dependencies]
 black = "^24.10.0"

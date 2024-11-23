@@ -7,7 +7,7 @@ load_dotenv()
 EVENT_SERVICE_ADDRESS = os.getenv("EVENT_SERVICE_ADDRESS")
 
 # Уровень логирования
-LOG_LEVEL = os.getenv("LOG_LEVEL", "ERROR").upper()
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # Количество потоков при парсинге pdf
 WORKERS_COUNT = int(os.getenv("WORKERS_COUNT", os.cpu_count()))
@@ -20,3 +20,5 @@ FORCE_PARSE = os.getenv("FORCE_PARSE", "FALSE").upper() == "TRUE"
 
 # Скачивать, даже если есть в cache
 FORCE_DOWNLOAD = os.getenv("FORCE_DOWNLOAD", "FALSE").upper() == "TRUE"
+
+CACHE_PATH = os.getenv("CACHE_PATH", "/tmp/pareser")

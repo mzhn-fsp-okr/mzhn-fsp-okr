@@ -1,4 +1,5 @@
 import json
+import time
 from get_new_pdf import get_link
 import requests
 import tempfile
@@ -7,11 +8,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional
 import camelot
 import re
-from lib import SportEvent, sport_event_to_dict
+from lib import SportEvent
 from grpc_communitcation import send_events_via_grpc
 from logger import logging
 import os
-from config import FORCE_PARSE, FORCE_DOWNLOAD
+from config import CACHE_PATH, FORCE_PARSE, FORCE_DOWNLOAD
+from cache import cache
 
 camelot.logger.setLevel(logging.ERROR)
 
@@ -254,42 +256,24 @@ def split_pages(total_pages: int, num_workers: int) -> List[str]:
 
 def download_pdf(url: str) -> str:
     logging.info(f"Скачивание PDF по ссылке: {url}")
+    pdf_filename = os.path.join(CACHE_PATH, f"downloaded_{int(time.time())}.pdf")
     response = requests.get(url, verify=False, headers={"User-Agent": "Mozilla/5.0"})
     if response.status_code == 200:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-            temp_pdf.write(response.content)
-            logging.info("PDF успешно скачан")
-            return temp_pdf.name
+        # Write the content to the file
+        with open(pdf_filename, "wb") as pdf_file:
+            pdf_file.write(response.content)
+            logging.info(f"PDF успешно скачан и сохранен в {pdf_filename}")
+        return pdf_filename
     else:
         logging.error(f"Не удалось скачать PDF. Код ошибки: {response.status_code}")
         raise Exception(f"HTTP {response.status_code}")
 
 
-CACHE_FILE = "cache.json"
-
-
-def load_cache():
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-
-def save_cache(cache):
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f)
-
-
 def process_pdf():
     file_path = None
     try:
-        # Загружаем кеш
-        cache = load_cache()
-
         # Получаем дату обновления и ссылку на PDF
-        # update_date, link = get_link()
-        update_date = "14.11.2024"
-        link = ""
+        update_date, link = get_link()
 
         # Проверяем, изменилась ли дата обновления
         if (
@@ -309,9 +293,8 @@ def process_pdf():
 
             # Скачиваем новый PDF
             file_path = download_pdf(link)
-            cache["update_date"] = update_date
-            cache["file_path"] = file_path
-            save_cache(cache)
+            cache.set("update_date", update_date)
+            cache.set("file_path", file_path)
             logging.info("Скачан новый PDF файл.")
 
         # Читаем PDF и определяем количество страниц
@@ -325,7 +308,7 @@ def process_pdf():
         logging.info(f"Начата обработка. Количество потоков: {num_workers}")
 
         # Список всех извлеченных событий
-        all_events = []
+        all_events: List[SportEvent] = []
         with ProcessPoolExecutor(max_workers=num_workers) as executor:
             futures = [
                 executor.submit(process_page_range, file_path, pr) for pr in page_ranges
@@ -353,12 +336,12 @@ def process_pdf():
             else:
                 last_sport_subtype = event.sport_subtype
 
-        # Преобразование событий в словари для JSON
-        events_dict = [sport_event_to_dict(event) for event in all_events]
+        # # Преобразование событий в словари для JSON
+        # events_dict = [sport_event_to_dict(event) for event in all_events]
 
-        # Сохранение в JSON файл
-        with open("results.json", "w", encoding="utf-8") as json_file:
-            json.dump(events_dict, json_file, ensure_ascii=False, indent=4)
+        # # Сохранение в JSON файл
+        # with open("results.json", "w", encoding="utf-8") as json_file:
+        #     json.dump(events_dict, json_file, ensure_ascii=False, indent=4)
 
         # Отправляем события через gRPC
         send_events_via_grpc(all_events)

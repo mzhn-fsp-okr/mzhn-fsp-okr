@@ -3,6 +3,7 @@ include:
   - event-service.yaml
   - rmq.yaml
   - subscriptions.yaml
+  - parser.yaml
 
 services:
   nginx:

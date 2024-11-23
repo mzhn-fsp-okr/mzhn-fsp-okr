@@ -1,0 +1,15 @@
+services:
+  parser:
+    container_name: mzhn-parser
+    restart: always
+    build:
+      context: ../parser/
+    environment:
+      EVENT_SERVICE_ADDRESS: event-service:7000
+      CACHE_PATH: /cache
+    volumes:
+      - parser-cache:/cache
+
+volumes:
+  parser-cache:
+    name: mzhn-parser-cache
