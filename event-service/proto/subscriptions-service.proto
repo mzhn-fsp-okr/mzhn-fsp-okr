@@ -1,0 +1,18 @@
+syntax="proto3";
+
+package subscriptions;
+
+option go_package="mzhn/proto/subscriptions-service;sspb";
+
+service SubscriptionService {
+    rpc GetUsersSubscribedToSport(SubscriptionRequest) returns (stream SubscriptionResponse);
+    rpc GetUsersSubscribedToEvent(SubscriptionRequest) returns (stream SubscriptionResponse);
+}
+
+message SubscriptionRequest {
+    string id = 1;    
+}
+
+message SubscriptionResponse {
+    string userId = 1;
+}

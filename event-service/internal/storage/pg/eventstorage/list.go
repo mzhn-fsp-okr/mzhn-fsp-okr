@@ -10,8 +10,28 @@ import (
 	"mzhn/event-service/pkg/sl"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func (s *Storage) applyListFilters(qb sq.SelectBuilder, filters model.EventsFilters) sq.SelectBuilder {
+
+	if filters.Limit != nil {
+		qb = qb.Limit(*filters.Limit)
+	}
+
+	if filters.Offset != nil {
+		qb = qb.Offset(*filters.Offset)
+	}
+
+	if filters.StartDate != nil {
+		qb = qb.Where(sq.GtOrEq{"ed.date_from": *filters.StartDate})
+	}
+
+	if filters.EndDate != nil {
+		qb = qb.Where(sq.LtOrEq{"ed.date_from": *filters.EndDate})
+	}
+
+	return qb
+}
 
 func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
 
@@ -35,22 +55,7 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 		InnerJoin(fmt.Sprintf("%s ed on ed.event_id = e.id", pg.EVENT_DATES)).
 		OrderBy("ed.date_from ASC").
 		PlaceholderFormat(sq.Dollar)
-
-	if filters.Limit != nil {
-		qb = qb.Limit(*filters.Limit)
-	}
-
-	if filters.Offset != nil {
-		qb = qb.Offset(*filters.Offset)
-	}
-
-	if filters.StartDate != nil {
-		qb = qb.Where(sq.GtOrEq{"ed.date_from": *filters.StartDate})
-	}
-
-	if filters.EndDate != nil {
-		qb = qb.Where(sq.LtOrEq{"ed.date_from": *filters.EndDate})
-	}
+	qb = s.applyListFilters(qb, filters)
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
@@ -103,7 +108,13 @@ func (s *Storage) listRequirementsFor(ctx context.Context, eventId string) ([]do
 	fn := "EventStorage.listRequirementsFor"
 	log := s.l.With(sl.Method(fn))
 
-	conn := ctx.Value("tx").(*pgxpool.Conn)
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		log.Error("failed to acquire connection", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+	defer conn.Release()
+
 	qb := sq.
 		Select("epr.gender, epr.min_age, epr.max_age").
 		From(fmt.Sprintf("%s epr", pg.EVENT_PARTICIPANTS_REQUIREMENTS)).

@@ -60,6 +60,6 @@ message EventResponse {
 }
 
 message UpcomingEventResponse {
-  string eventId = 1; 
+  EventInfo event = 1;  
   uint32 daysLeft = 2; // Кол-во дней до эвента
 }
