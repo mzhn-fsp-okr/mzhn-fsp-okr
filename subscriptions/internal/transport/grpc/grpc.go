@@ -19,10 +19,11 @@ import (
 var _ sspb.SubscriptionServiceServer = (*Server)(nil)
 
 type Server struct {
-	sspb.UnimplementedSubscriptionServiceServer
 	cfg *config.Config
 	l   *slog.Logger
 	ss  domain.SubscriptionsService
+
+	*sspb.UnimplementedSubscriptionServiceServer
 }
 
 func New(cfg *config.Config, ss domain.SubscriptionsService) *Server {
@@ -46,7 +47,7 @@ func (s *Server) Run(ctx context.Context) error {
 		reflection.Register(server)
 	}
 
-	sspb.RegisterSubscriptionServiceServer(server, s)
+	// sspb.RegisterSubscriptionServiceServer(server, s)
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -68,7 +69,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 // GetUsersSubscribedToEvent implements sspb.SubscriptionServiceServer.
-func (s *Server) GetUsersSubscribedToEvent(req *sspb.SubscriptionRequest, stream grpc.ServerStreamingServer[sspb.SubscriptionResponse]) error {
+func (s *Server) GetUsersSubscribedToEvent(req *sspb.SubscriptionRequest, stream sspb.SubscriptionService_GetUsersSubscribedToEventServer) error {
 	userIds, err := s.ss.GetUsersSubscribedToEvent(req.Id)
 	if err != nil {
 		return err
@@ -84,7 +85,7 @@ func (s *Server) GetUsersSubscribedToEvent(req *sspb.SubscriptionRequest, stream
 }
 
 // GetUsersSubscribedToSport implements sspb.SubscriptionServiceServer.
-func (s *Server) GetUsersSubscribedToSport(req *sspb.SubscriptionRequest, stream grpc.ServerStreamingServer[sspb.SubscriptionResponse]) error {
+func (s *Server) GetUsersSubscribedToSport(req *sspb.SubscriptionRequest, stream sspb.SubscriptionService_GetUsersSubscribedToSportServer) error {
 	userIds, err := s.ss.GetUsersSubscribedToSport(req.Id)
 	if err != nil {
 		return err
