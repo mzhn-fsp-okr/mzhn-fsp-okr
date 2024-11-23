@@ -2,8 +2,9 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
-	"mzhn/subscriptions-service/internal/config"
+	"mzhn/notification-service/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -11,13 +12,22 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var (
+	local bool = false
+)
+
 func init() {
-	if err := godotenv.Load(); err != nil {
-		panic("cannot load .env")
-	}
+	flag.BoolVar(&local, "local", false, "run in local mode")
 }
 
 func main() {
+	flag.Parse()
+
+	if local {
+		if err := godotenv.Load(); err != nil {
+			panic("cannot load .env")
+		}
+	}
 	cfg := config.New()
 
 	pg := cfg.Pg

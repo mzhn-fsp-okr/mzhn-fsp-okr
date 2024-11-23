@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 from logger import logging
 
@@ -18,10 +17,9 @@ def init_driver():
     options = Options()
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
     logging.debug("Инициализация WebDriver")
-    return webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()), options=options
-    )
+    return webdriver.Chrome(options=options)
 
 
 def open_page(driver, url):
@@ -161,14 +159,6 @@ def extract_link(file_items, index):
                 f"Ошибка при обработке file-item {file_index} в каталоге {index}: {e}"
             )
     return None, None
-
-
-# Сохранение ссылок в файл
-def save_links(pdf_links, filename):
-    with open(filename, "w", encoding="utf-8") as f:
-        for link in pdf_links:
-            f.write(f"{link}\n")
-    logging.info(f"Ссылки сохранены в файл '{filename}'")
 
 
 def get_link():

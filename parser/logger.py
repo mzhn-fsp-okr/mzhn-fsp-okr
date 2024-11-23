@@ -11,7 +11,7 @@ logging_levels = {
     "NOTSET": logging.NOTSET,
 }
 
-logging_level = logging_levels.get(LOG_LEVEL, logging.ERROR)
+logging_level = logging_levels.get(LOG_LEVEL, logging.INFO)
 
 logging.basicConfig(
     level=logging_level,

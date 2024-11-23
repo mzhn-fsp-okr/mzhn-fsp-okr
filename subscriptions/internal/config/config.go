@@ -55,13 +55,23 @@ func (as *AuthService) ConnectionString() string {
 	return fmt.Sprintf("%s:%d", as.Host, as.Port)
 }
 
+type EventService struct {
+	Host string `env:"EVENT_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"EVENT_SERVICE_PORT" env-required:"true"`
+}
+
+func (as *EventService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", as.Host, as.Port)
+}
+
 type Config struct {
-	Env         string `env:"ENV" env-default:"local"`
-	App         App
-	Http        Http
-	Grpc        Grpc
-	Pg          Pg
-	AuthService AuthService
+	Env          string `env:"ENV" env-default:"local"`
+	App          App
+	Http         Http
+	Grpc         Grpc
+	Pg           Pg
+	AuthService  AuthService
+	EventService EventService
 }
 
 func New() *Config {

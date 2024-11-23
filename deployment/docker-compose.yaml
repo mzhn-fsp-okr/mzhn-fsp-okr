@@ -2,10 +2,15 @@ include:
   - auth.yaml
   - event-service.yaml
   - rmq.yaml
+  - subscriptions.yaml
+  # - parser.yaml
+  - notification-service.yaml
 
 services:
   nginx:
+    container_name: mzhn-nginx
     image: nginx:1-alpine
+    restart: always
     ports:
       - 80:80
     volumes:

@@ -30,26 +30,24 @@ def send_events_via_grpc(events: List[SportEvent]):
         """
         for event in events:
             yield event_service_pb2.LoadRequest(
-                info=event_service_pb2.EventInfo(
-                    ekpId=event.id,
-                    sportType=event.sport_type,
-                    sportSubtype=event.sport_subtype,
-                    name=event.name,
-                    description=event.description,
-                    dates=event_service_pb2.DateRange(
-                        date_from=event.dates.from_, date_to=event.dates.to
-                    ),
-                    location=event.location,
-                    participants=event.participants,
-                    participantRequirements=[
-                        event_service_pb2.ParticipantRequirements(
-                            gender=info["gender"],
-                            min_age=info["age"][0],
-                            max_age=info["age"][1],
-                        )
-                        for info in event.gender_age_info
-                    ],
-                )
+                ekpId=event.id,
+                sportType=event.sport_type,
+                sportSubtype=event.sport_subtype,
+                name=event.name,
+                description=event.description,
+                dates=event_service_pb2.DateRange(
+                    date_from=event.dates.from_, date_to=event.dates.to
+                ),
+                location=event.location,
+                participants=event.participants,
+                participantRequirements=[
+                    event_service_pb2.ParticipantRequirements(
+                        gender=info["gender"],
+                        min_age=info["age"][0],
+                        max_age=info["age"][1],
+                    )
+                    for info in event.gender_age_info
+                ],
             )
 
     try:
