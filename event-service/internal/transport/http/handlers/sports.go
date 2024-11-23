@@ -32,6 +32,7 @@ func Sports(ss *sportservice.Service) echo.HandlerFunc {
 
 		ch := make(chan model.SportTypeWithSubtypes, 10)
 		done := make(chan error, 1)
+		res.Sports = make([]model.SportTypeWithSubtypes, 0)
 
 		go func() {
 			done <- ss.List(ctx, ch)

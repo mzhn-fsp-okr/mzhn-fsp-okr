@@ -95,6 +95,7 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 
 		chEvents := make(chan domain.EventInfo, 10)
 		done := make(chan error, 1)
+		res.Events = make([]domain.EventInfo, 0)
 
 		go func() {
 			done <- es.List(ctx, chEvents, filters)
