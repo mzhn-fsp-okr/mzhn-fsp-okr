@@ -67,7 +67,7 @@ func (s *Server) GetUpcomingEvents(req *emptypb.Empty, stream espb.EventService_
 						SportSubtype: &espb.SportSubtype{
 							Id:   event.SportSubtype.Id,
 							Name: event.SportSubtype.Name,
-							Parent: &espb.SportSubtype{
+							Parent: &espb.SportType{
 								Id:   event.SportSubtype.Parent.Id,
 								Name: event.SportSubtype.Parent.Name,
 							},
