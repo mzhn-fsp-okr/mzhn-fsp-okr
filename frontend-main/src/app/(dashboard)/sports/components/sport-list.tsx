@@ -1,8 +1,8 @@
 import { sports } from "@/api/events";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { BellPlus, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useMemo } from "react";
+import { SportEntry } from "./sport-entry";
 
 export default function SportList({ search = "" }: { search: string }) {
   const { data, isFetching, isError } = useQuery({
@@ -21,21 +21,10 @@ export default function SportList({ search = "" }: { search: string }) {
   if (isFetching) return <LoaderCircle className="animate-spin" />;
 
   return (
-    <ul className="grid grid-cols-2 gap-2 md:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
       {entries.map((s, i) => (
         <SportEntry key={i} id={s.id} name={s.name} />
       ))}
     </ul>
-  );
-}
-
-function SportEntry({ id, name }: { id: string; name: string }) {
-  return (
-    <li className="flex items-center justify-between rounded border px-4 py-8">
-      <p>{name}</p>
-      <Button size="icon" variant="secondary">
-        <BellPlus />
-      </Button>
-    </li>
   );
 }

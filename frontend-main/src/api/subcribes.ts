@@ -30,3 +30,33 @@ export async function events() {
   );
   return result.events;
 }
+
+export async function sportSubscribe(id: string) {
+  return await apiFetch(
+    "/api/subscriptions/sport/subscribe",
+    {
+      sportId: id,
+    },
+    { method: "POST" }
+  );
+}
+
+export async function sportUnsubscribe(id: string) {
+  return await apiFetch(
+    "/api/subscriptions/sport/unsubscribe",
+    {
+      sportId: id,
+    },
+    { method: "POST" }
+  );
+}
+
+export async function sports() {
+  const result = await apiFetch<SearchResponse>(
+    "/subscriptions/sport/", // ????????????????
+    undefined,
+    {},
+    process.env.NEXT_PUBLIC_API_URL
+  );
+  return result.events;
+}
