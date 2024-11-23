@@ -10,6 +10,7 @@ import (
 	"mzhn/notification-cron/pb/espb"
 	"mzhn/notification-cron/pb/sspb"
 	"mzhn/notification-cron/pkg/sl"
+	"sync"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -36,53 +37,57 @@ func New(cfg *config.Config, sspb sspb.SubscriptionServiceClient, espb espb.Even
 
 func (s *Service) NotifyUsers(ctx context.Context) error {
 	s.l.Debug("NotifyUsers")
-	// Канал для сбора результатов
+
+	const workerCount = 5
 	eventsChan := make(chan *espb.UpcomingEventResponse)
-	// Канал для ошибок
 	errChan := make(chan error, 1)
 
-	stream, err := s.espb.GetUpcomingEvents(context.Background(), &emptypb.Empty{})
+	stream, err := s.espb.GetUpcomingEvents(ctx, &emptypb.Empty{})
 	if err != nil {
 		s.l.Error("cannot get upcoming events", sl.Err(err))
 		return err
 	}
 
+	var wg sync.WaitGroup
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for event := range eventsChan {
+				if err := s.proccessEvent(ctx, event); err != nil {
+					s.l.Error("failed to proccess event", sl.Err(err))
+				}
+			}
+		}()
+	}
+
 	go func() {
+		defer close(eventsChan)
 		for {
 			event, err := stream.Recv()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					close(eventsChan)
 					return
 				}
-
-				s.l.Error("Error whiel Recv()", slog.Any("error", err))
 				errChan <- err
 				return
 			}
-
 			eventsChan <- event
 		}
 	}()
 
-	for {
-		select {
-		case err := <-errChan:
-			return err
-		case event, ok := <-eventsChan:
-			if !ok {
-				return nil
-			}
-
-			go s.proccessEvent(event)
-		}
+	select {
+	case err := <-errChan:
+		s.l.Error("Error while read notifyUser channel", sl.Err(err))
+		return err
+	case <-ctx.Done():
+		s.l.Error("Context error ", sl.Err(err))
+		return ctx.Err()
 	}
-
 }
 
-func (s *Service) proccessEvent(event *espb.UpcomingEventResponse) error {
-	var daysLeft sspb.DaysLeft
-
+func (s *Service) proccessEvent(ctx context.Context, event *espb.UpcomingEventResponse) error {
+	daysLeft := sspb.DaysLeft_ThreeDays
 	if event.DaysLeft <= 30 && event.DaysLeft > 7 {
 		daysLeft = sspb.DaysLeft_Month
 	} else if event.DaysLeft <= 7 && event.DaysLeft > 3 {
@@ -91,7 +96,7 @@ func (s *Service) proccessEvent(event *espb.UpcomingEventResponse) error {
 		daysLeft = sspb.DaysLeft_ThreeDays
 	}
 
-	userIds, err := s.getUsersToNotify(context.Background(), &sspb.UsersEventByDaysRequest{
+	userIds, err := s.getUsersToNotify(ctx, &sspb.UsersEventByDaysRequest{
 		EventId:  event.Event.Id,
 		DaysLeft: daysLeft,
 	})
@@ -104,7 +109,8 @@ func (s *Service) proccessEvent(event *espb.UpcomingEventResponse) error {
 	}
 
 	for _, userId := range userIds {
-		go s.pub.NotifyAboutUpcomingEvent(context.Background(), userId, event.Event.Id, event.DaysLeft, daysLeft)
+		s.l.Debug("trying to notify user")
+		s.pub.NotifyAboutUpcomingEvent(ctx, userId, event.Event.Id, event.DaysLeft, daysLeft)
 	}
 
 	return nil
