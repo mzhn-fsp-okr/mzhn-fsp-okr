@@ -13,10 +13,18 @@ import (
 )
 
 type EventsRequest struct {
-	Page      int    `query:"page"`
-	PageSize  int    `query:"page_size"`
-	StartDate string `query:"start_date"`
-	EndDate   string `query:"end_date"`
+	Page            *int     `query:"page"`
+	PageSize        *int     `query:"page_size"`
+	StartDate       *string  `query:"start_date"`
+	EndDate         *string  `query:"end_date"`
+	SportTypeId     []string `query:"sport_type_id"`
+	SportSubtypeId  []string `query:"sport_subtype_id"`
+	MinAge          *int     `query:"min_age"`
+	MaxAge          *int     `query:"max_age"`
+	Sex             *bool    `query:"sex"`
+	MinParticipants *int     `query:"min_participants"`
+	MaxParticipants *int     `query:"max_participants"`
+	Location        *string  `query:"location"`
 }
 
 type EventsResponse struct {
@@ -40,16 +48,20 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 
 		filters := model.EventsFilters{}
 
-		if req.Page != 0 && req.PageSize != 0 {
-			limit := uint64(req.PageSize)
-			filters.Limit = &limit
-
-			offset := (uint64(req.Page) - 1) * limit
-			filters.Offset = &offset
+		if req.PageSize != nil {
+			page := uint64(*req.PageSize)
+			filters.Limit = page
+		} else {
+			filters.Limit = 100
 		}
 
-		if req.StartDate != "" {
-			startDate, err := time.Parse("02.01.2006", req.StartDate)
+		if req.Page != nil {
+			offset := (uint64(*req.Page) - 1) * filters.Limit
+			filters.Offset = offset
+		}
+
+		if req.StartDate != nil {
+			startDate, err := time.Parse("02.01.2006", *req.StartDate)
 			if err != nil {
 				log.Error("failed to parse start date", sl.Err(err))
 				return echo.NewHTTPError(400, "bad start date")
@@ -57,14 +69,23 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 			filters.StartDate = &startDate
 		}
 
-		if req.EndDate != "" {
-			endDate, err := time.Parse("02.01.2006", req.EndDate)
+		if req.EndDate != nil {
+			endDate, err := time.Parse("02.01.2006", *req.EndDate)
 			if err != nil {
 				log.Error("failed to parse end date", sl.Err(err))
 				return echo.NewHTTPError(400, "bad end date")
 			}
 			filters.EndDate = &endDate
 		}
+
+		filters.MinAge = req.MinAge
+		filters.MaxAge = req.MaxAge
+		filters.Sex = req.Sex
+		filters.MinParticipants = req.MinParticipants
+		filters.MaxParticipants = req.MaxParticipants
+		filters.Location = req.Location
+		filters.SportTypesId = req.SportTypeId
+		filters.SportSubtypesId = req.SportSubtypeId
 
 		res := EventsResponse{}
 
