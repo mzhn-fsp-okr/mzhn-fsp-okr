@@ -26,6 +26,7 @@ type EventServiceClient interface {
 	Load(ctx context.Context, opts ...grpc.CallOption) (EventService_LoadClient, error)
 	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
 	Events(ctx context.Context, opts ...grpc.CallOption) (EventService_EventsClient, error)
+	Sport(ctx context.Context, in *SportRequest, opts ...grpc.CallOption) (*SportResponse, error)
 	Sports(ctx context.Context, opts ...grpc.CallOption) (EventService_SportsClient, error)
 	GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (EventService_GetUpcomingEventsClient, error)
 }
@@ -112,6 +113,15 @@ func (x *eventServiceEventsClient) Recv() (*EventResponse, error) {
 	return m, nil
 }
 
+func (c *eventServiceClient) Sport(ctx context.Context, in *SportRequest, opts ...grpc.CallOption) (*SportResponse, error) {
+	out := new(SportResponse)
+	err := c.cc.Invoke(ctx, "/events.EventService/Sport", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *eventServiceClient) Sports(ctx context.Context, opts ...grpc.CallOption) (EventService_SportsClient, error) {
 	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[2], "/events.EventService/Sports", opts...)
 	if err != nil {
@@ -182,6 +192,7 @@ type EventServiceServer interface {
 	Load(EventService_LoadServer) error
 	Event(context.Context, *EventRequest) (*EventResponse, error)
 	Events(EventService_EventsServer) error
+	Sport(context.Context, *SportRequest) (*SportResponse, error)
 	Sports(EventService_SportsServer) error
 	GetUpcomingEvents(*emptypb.Empty, EventService_GetUpcomingEventsServer) error
 	mustEmbedUnimplementedEventServiceServer()
@@ -199,6 +210,9 @@ func (UnimplementedEventServiceServer) Event(context.Context, *EventRequest) (*E
 }
 func (UnimplementedEventServiceServer) Events(EventService_EventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method Events not implemented")
+}
+func (UnimplementedEventServiceServer) Sport(context.Context, *SportRequest) (*SportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sport not implemented")
 }
 func (UnimplementedEventServiceServer) Sports(EventService_SportsServer) error {
 	return status.Errorf(codes.Unimplemented, "method Sports not implemented")
@@ -289,6 +303,24 @@ func (x *eventServiceEventsServer) Recv() (*EventRequest, error) {
 	return m, nil
 }
 
+func _EventService_Sport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).Sport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/events.EventService/Sport",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).Sport(ctx, req.(*SportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _EventService_Sports_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(EventServiceServer).Sports(&eventServiceSportsServer{stream})
 }
@@ -346,6 +378,10 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Event",
 			Handler:    _EventService_Event_Handler,
+		},
+		{
+			MethodName: "Sport",
+			Handler:    _EventService_Sport_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

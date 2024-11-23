@@ -8,6 +8,7 @@ import (
 	"mzhn/event-service/internal/domain"
 	"mzhn/event-service/internal/services/eventservice"
 	"mzhn/event-service/internal/services/sportservice"
+	"mzhn/event-service/internal/storage/model"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
 	"net"
@@ -28,6 +29,33 @@ type Server struct {
 	es  *eventservice.Service
 	ss  *sportservice.Service
 	*espb.UnimplementedEventServiceServer
+}
+
+// Sport implements espb.EventServiceServer.
+func (s *Server) Sport(ctx context.Context, in *espb.SportRequest) (*espb.SportResponse, error) {
+
+	sp, err := s.ss.Find(ctx, in.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	if sp == nil {
+		return nil, status.Errorf(codes.NotFound, "not found")
+	}
+
+	response := &espb.SportResponse{
+		SportType: &espb.SportTypeWithSubtypes{
+			Id:   sp.SportType.Id,
+			Name: sp.SportType.Name,
+			Subtypes: lo.Map(sp.Subtypes, func(sst model.Subtype, _ int) *espb.SportSubtype2 {
+				return &espb.SportSubtype2{
+					Id:   sst.Id,
+					Name: sst.Name,
+				}
+			}),
+		},
+	}
+	return response, nil
 }
 
 // Event implements espb.EventServiceServer.

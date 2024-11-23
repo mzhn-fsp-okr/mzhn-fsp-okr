@@ -14,3 +14,7 @@ type SportTypeWithSubtypes struct {
 	SportType
 	Subtypes []Subtype `json:"subtypes"`
 }
+
+type SportFilter struct {
+	Name *string
+}
