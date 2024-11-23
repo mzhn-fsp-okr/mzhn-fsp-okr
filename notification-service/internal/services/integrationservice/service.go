@@ -26,6 +26,7 @@ type VerificationSaver interface {
 }
 type VerificationProvider interface {
 	Find(ctx context.Context, userId string) (*model.Verification, error)
+	FindByToken(ctx context.Context, token string) (*model.Verification, error)
 }
 
 type Service struct {
@@ -100,6 +101,23 @@ func (s *Service) GetVerificationCode(ctx context.Context, in *domain.Verificati
 	fn := "integrationservice.GetVerificationCode"
 	log := s.l.With(sl.Module(fn))
 
+	old, err := s.vp.Find(ctx, in.UserId)
+	if err != nil {
+		log.Error("failed to find verification", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	if old != nil {
+		expireAt := s.calculateExpireAt(old.CreatedAt)
+		if !time.Now().After(expireAt) {
+			return &domain.Verification{
+				UserId:   old.UserId,
+				Token:    old.Token,
+				ExpireAt: expireAt,
+			}, nil
+		}
+	}
+
 	token := s.generateVerificationCode()
 
 	v, err := s.vs.Save(ctx, &model.NewVerification{
@@ -123,17 +141,17 @@ func (s *Service) LinkTelegram(ctx context.Context, in *domain.LinkTelegramReque
 	fn := "integrationservice.LinkTelegram"
 	log := s.l.With(sl.Method(fn))
 
-	if err := s.verify(ctx, &domain.VerificationRequest{
-		UserId: in.UserId,
-		Token:  in.Token,
-	}); err != nil {
+	v, err := s.verify(ctx, &domain.VerificationRequest{
+		Token: in.Token,
+	})
+	if err != nil {
 		log.Error("failed to verify token", sl.Err(err), slog.Any("request", in))
 		return fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if err := s.is.Save(ctx, &domain.SetIntegrations{
-		UserId:           in.UserId,
-		TelegramUsername: &in.TelegramUsername,
+		UserId:           v.UserId,
+		TelegramUsername: &in.ChatId,
 	}); err != nil {
 		log.Error("failed to save integrations", sl.Err(err), slog.Any("request", in))
 		return fmt.Errorf("%s: %w", fn, err)
@@ -146,29 +164,33 @@ func (s *Service) calculateExpireAt(createdAt time.Time) time.Time {
 	return createdAt.Add(time.Minute * time.Duration(s.cfg.Verificator.TTL))
 }
 
-func (s *Service) verify(ctx context.Context, in *domain.VerificationRequest) error {
+func (s *Service) verify(ctx context.Context, in *domain.VerificationRequest) (*domain.Verification, error) {
 	fn := "integrationservice.verify"
 	log := s.l.With(sl.Module(fn))
 
-	v, err := s.vp.Find(ctx, in.UserId)
+	v, err := s.vp.FindByToken(ctx, in.Token)
 	if err != nil {
 		log.Error("failed to find verification", sl.Err(err))
-		return fmt.Errorf("%s: %w", fn, err)
+		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if v == nil {
-		return fmt.Errorf("%s: %w", fn, domain.ErrVerificationNotFound)
+		return nil, fmt.Errorf("%s: %w", fn, domain.ErrVerificationNotFound)
 	}
 
 	if v.Token != in.Token {
-		return fmt.Errorf("%s: %w", fn, domain.ErrVerificationInvalidToken)
+		return nil, fmt.Errorf("%s: %w", fn, domain.ErrVerificationInvalidToken)
 	}
 
 	expireAt := s.calculateExpireAt(v.CreatedAt)
 
 	if time.Now().After(expireAt) {
-		return fmt.Errorf("%s: %w", fn, domain.ErrVerificationExpired)
+		return nil, fmt.Errorf("%s: %w", fn, domain.ErrVerificationExpired)
 	}
 
-	return nil
+	return &domain.Verification{
+		UserId:   v.UserId,
+		Token:    v.Token,
+		ExpireAt: s.calculateExpireAt(v.CreatedAt),
+	}, nil
 }

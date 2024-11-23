@@ -31,9 +31,8 @@ type Server struct {
 func (s *Server) LinkTelegram(ctx context.Context, req *nspb.LinkTelegramRequest) (*nspb.LinkTelegramResponse, error) {
 
 	if err := s.is.LinkTelegram(ctx, &domain.LinkTelegramRequest{
-		UserId:           req.UserId,
-		Token:            req.Token,
-		TelegramUsername: req.TelegramUsername,
+		Token:  req.Token,
+		ChatId: req.ChatId,
 	}); err != nil {
 		if errors.Is(err, domain.ErrVerificationExpired) {
 			return nil, status.Errorf(codes.ResourceExhausted, "verification expired")

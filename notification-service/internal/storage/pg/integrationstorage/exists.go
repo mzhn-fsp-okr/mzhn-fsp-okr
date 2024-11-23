@@ -2,6 +2,7 @@ package integrationstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"mzhn/notification-service/internal/domain"
@@ -45,7 +46,8 @@ func (s *Storage) find(ctx context.Context, userId string) (*domain.Integrations
 			&i.TelegramUsername,
 			&i.WannaMail,
 		); err != nil {
-		if err == pgx.ErrNoRows {
+
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 
