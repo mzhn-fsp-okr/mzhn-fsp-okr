@@ -11,7 +11,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
-func (s *Storage) List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes) error {
+func (s *Storage) List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes, f *model.SportFilter) error {
 	fn := "sport-storage.List"
 	log := s.l.With(sl.Method(fn))
 
@@ -28,6 +28,12 @@ func (s *Storage) List(ctx context.Context, chout chan<- model.SportTypeWithSubt
 		Select("st.id, st.sport_type").
 		From(fmt.Sprintf("%s st", pg.SPORT_TYPES)).
 		PlaceholderFormat(sq.Dollar)
+
+	if f != nil {
+		if f.Name != nil {
+			qb = qb.Where(sq.ILike{"st.sport_type": fmt.Sprintf("%%%s%%", *f.Name)})
+		}
+	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 
 type SportProvider interface {
 	Find(ctx context.Context, id string) (*model.SportTypeWithSubtypes, error)
-	List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes) error
+	List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes, f *model.SportFilter) error
 }
 
 type Service struct {
@@ -28,12 +28,12 @@ func New(cfg *config.Config, sp SportProvider) *Service {
 	}
 }
 
-func (s *Service) List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes) error {
+func (s *Service) List(ctx context.Context, chout chan<- model.SportTypeWithSubtypes, f *model.SportFilter) error {
 
 	fn := "SportService.List"
 	log := s.l.With(sl.Method(fn))
 
-	err := s.sp.List(ctx, chout)
+	err := s.sp.List(ctx, chout, f)
 	if err != nil {
 		log.Error("failed to list sports", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)

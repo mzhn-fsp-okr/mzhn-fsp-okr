@@ -9,6 +9,10 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+type SportsListFilters struct {
+	Name *string `query:"name"`
+}
+
 type SportsListResponse struct {
 	Sports []model.SportTypeWithSubtypes `json:"sportTypes"`
 	Total  int64                         `json:"total"`
@@ -19,23 +23,24 @@ func Sports(ss *sportservice.Service) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 
-		// req := EventsRequest{}
-		// binder := &echo.DefaultBinder{}
-		// if err := binder.BindQueryParams(c, &req); err != nil {
-		// 	log.Error("failed to bind events request", sl.Err(err))
-		// 	return echo.NewHTTPError(500, err.Error())
-		// }
-
-		// slog.Info("list events", slog.Any("filters", req))
+		req := EventsRequest{}
+		binder := &echo.DefaultBinder{}
+		if err := binder.BindQueryParams(c, &req); err != nil {
+			log.Error("failed to bind events request", sl.Err(err))
+			return echo.NewHTTPError(500, err.Error())
+		}
 
 		res := SportsListResponse{}
 
+		f := &model.SportFilter{
+			Name: req.Name,
+		}
 		ch := make(chan model.SportTypeWithSubtypes, 10)
 		done := make(chan error, 1)
 		res.Sports = make([]model.SportTypeWithSubtypes, 0)
 
 		go func() {
-			done <- ss.List(ctx, ch)
+			done <- ss.List(ctx, ch, f)
 		}()
 
 		go func() {
