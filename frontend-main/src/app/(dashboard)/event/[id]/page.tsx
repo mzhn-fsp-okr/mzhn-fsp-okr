@@ -1,11 +1,11 @@
 import { get } from "@/api/events";
 import EventAvatar from "@/components/events/event-avatar";
 import { TitleInit } from "@/components/providers/title";
-import { Button } from "@/components/ui/button";
 import ButtonBack from "@/components/ui/button-back";
-import { CalendarClock, CalendarPlus, Users } from "lucide-react";
+import { CalendarClock, Users } from "lucide-react";
 import moment from "moment";
 import DisciplinesView from "./disciplines-view";
+import SubscribeButton from "./subscribe-button";
 
 import "moment/locale/ru";
 
@@ -40,9 +40,7 @@ export default async function Page({ params }: PageProps) {
               <ButtonBack />
             </li>
             <li>
-              <Button className="size-12" variant={"secondary"}>
-                <CalendarPlus />
-              </Button>
+              <SubscribeButton id={params.id} />
             </li>
           </ul>
         </div>
