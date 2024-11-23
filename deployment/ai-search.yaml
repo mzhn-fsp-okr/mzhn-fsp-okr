@@ -1,0 +1,8 @@
+services:
+  ai-search:
+    container_name: mzhn-ai-search
+    restart: always
+    build:
+      context: ../ai-search/
+    environment:
+      GIGACHAT_CREDENTIALS: ${AI_SEARCH_GIGACHAT_CREDENTIALS}

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"mzhn/notification-service/internal/config"
 	"mzhn/notification-service/internal/domain"
@@ -11,8 +12,10 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 var _ nspb.NotificationServiceServer = (*Server)(nil)
@@ -26,12 +29,24 @@ type Server struct {
 
 // LinkTelegram implements nspb.NotificationServiceServer.
 func (s *Server) LinkTelegram(ctx context.Context, req *nspb.LinkTelegramRequest) (*nspb.LinkTelegramResponse, error) {
-	if err := s.is.Save(ctx, &domain.SetIntegrations{
+
+	if err := s.is.LinkTelegram(ctx, &domain.LinkTelegramRequest{
 		UserId:           req.UserId,
-		TelegramUsername: &req.TelegramUsername,
+		Token:            req.Token,
+		TelegramUsername: req.TelegramUsername,
 	}); err != nil {
+		if errors.Is(err, domain.ErrVerificationExpired) {
+			return nil, status.Errorf(codes.ResourceExhausted, "verification expired")
+		}
+		if errors.Is(err, domain.ErrVerificationInvalidToken) {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid token")
+		}
+		if errors.Is(err, domain.ErrVerificationNotFound) {
+			return nil, status.Errorf(codes.NotFound, "verification not found")
+		}
 		return nil, err
 	}
+
 	return &nspb.LinkTelegramResponse{}, nil
 }
 

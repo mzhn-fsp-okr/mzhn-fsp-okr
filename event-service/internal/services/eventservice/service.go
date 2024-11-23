@@ -12,7 +12,7 @@ import (
 
 type EventProvider interface {
 	Find(ctx context.Context, id string) (*domain.EventInfo, error)
-	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error
+	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters ...model.EventsFilters) error
 	Count(ctx context.Context, filters model.EventsFilters) (int64, error)
 }
 
@@ -68,11 +68,12 @@ func (s *Service) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	return event.Id, nil
 }
 
-func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
+func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters ...model.EventsFilters) error {
+
 	fn := "EventService.List"
 	log := s.l.With(sl.Method(fn))
 
-	err := s.ep.List(ctx, chEvents, filters)
+	err := s.ep.List(ctx, chEvents, filters...)
 	if err != nil {
 		log.Error("failed to list events", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)

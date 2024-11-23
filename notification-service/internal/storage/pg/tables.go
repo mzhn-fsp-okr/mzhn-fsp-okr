@@ -1,5 +1,6 @@
 package pg
 
 const (
-	INTEGRATIONS string = "integrations"
+	INTEGRATIONS  string = "integrations"
+	VERIFICATIONS string = "verification"
 )

@@ -50,7 +50,7 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 				SportSubtype: &espb.SportSubtype{
 					Id:   event.SportSubtype.Id,
 					Name: event.SportSubtype.Name,
-					Parent: &espb.SportSubtype{
+					Parent: &espb.SportType{
 						Id:   event.SportSubtype.Parent.Id,
 						Name: event.SportSubtype.Parent.Name,
 					},

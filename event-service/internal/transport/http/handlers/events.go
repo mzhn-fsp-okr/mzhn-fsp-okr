@@ -47,7 +47,9 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 
 		slog.Info("list events", slog.Any("filters", req))
 
-		filters := model.EventsFilters{}
+		filters := model.EventsFilters{
+			Pagination: new(model.Pagination),
+		}
 
 		if req.PageSize != nil {
 			page := uint64(*req.PageSize)
@@ -93,6 +95,7 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 
 		chEvents := make(chan domain.EventInfo, 10)
 		done := make(chan error, 1)
+		res.Events = make([]domain.EventInfo, 0)
 
 		go func() {
 			done <- es.List(ctx, chEvents, filters)

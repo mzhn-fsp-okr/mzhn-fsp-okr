@@ -6,7 +6,7 @@ services:
       context: ../notification-service/
     environment:
       WAIT_HOSTS: pg-es:5432
-      APP_NAME: "events"
+      APP_NAME: "notification"
       APP_VERSION: "1.0.0"
 
       PG_HOST: pg-ns
@@ -26,7 +26,7 @@ services:
       SUBSCRIPTION_SERVICE_HOST: subscriptions-service
       SUBSCRIPTION_SERVICE_PORT: 7000
 
-      EVENT_SERVICE_HOST: events-service
+      EVENT_SERVICE_HOST: event-service
       EVENT_SERVICE_PORT: 7000
 
       AMQP_HOST: rmq
@@ -46,6 +46,9 @@ services:
 
     depends_on:
       - pg-ns
+      - event-service
+      - auth-service
+      - subscriptions-service
 
     ports:
       - "${NOTIFICATION_SERVICE_HTTP_PORT}:80"

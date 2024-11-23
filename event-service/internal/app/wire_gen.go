@@ -11,15 +11,17 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rabbitmq/amqp091-go"
-	"google.golang.org/grpc"
+	grpc2 "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/services/authservice"
 	"mzhn/event-service/internal/services/eventservice"
+	"mzhn/event-service/internal/services/sportservice"
 	"mzhn/event-service/internal/storage/amqp"
 	"mzhn/event-service/internal/storage/pg/eventstorage"
-	grpc2 "mzhn/event-service/internal/transport/grpc"
+	"mzhn/event-service/internal/storage/pg/sportstorage"
+	"mzhn/event-service/internal/transport/grpc"
 	"mzhn/event-service/internal/transport/http"
 	"mzhn/event-service/pb/authpb"
 	"mzhn/event-service/pkg/sl"
@@ -34,6 +36,11 @@ import (
 
 func New() (*App, func(), error) {
 	configConfig := config.New()
+	authClient, err := _authpb(configConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	service := authservice.New(configConfig, authClient)
 	pool, cleanup, err := _pg(configConfig)
 	if err != nil {
 		return nil, nil, err
@@ -45,15 +52,12 @@ func New() (*App, func(), error) {
 		return nil, nil, err
 	}
 	rabbitMQ := amqp.New(configConfig, channel)
-	service := eventservice.New(configConfig, storage, storage, rabbitMQ, storage)
-	authClient, err := _authpb(configConfig)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	authserviceService := authservice.New(configConfig, authClient)
-	v := _servers(configConfig, service, authserviceService)
+	eventserviceService := eventservice.New(configConfig, storage, storage, rabbitMQ, storage)
+	sportstorageStorage := sportstorage.New(configConfig, pool)
+	sportserviceService := sportservice.New(configConfig, sportstorageStorage)
+	server := http.New(configConfig, service, eventserviceService, sportserviceService)
+	grpcServer := grpc.New(configConfig, eventserviceService)
+	v := _servers(configConfig, server, grpcServer)
 	app := newApp(configConfig, v)
 	return app, func() {
 		cleanup2()
@@ -83,7 +87,7 @@ func _pg(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 
 func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 	addr := cfg.AuthService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -91,15 +95,15 @@ func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 	return authpb.NewAuthClient(conn), nil
 }
 
-func _servers(cfg *config.Config, es *eventservice.Service, as *authservice.Service) []Server {
+func _servers(cfg *config.Config, http2 *http.Server, grpc3 *grpc.Server) []Server {
 	servers := make([]Server, 0, 2)
 
 	if cfg.Http.Enabled {
-		servers = append(servers, http.New(cfg, as, es))
+		servers = append(servers, http2)
 	}
 
 	if cfg.Grpc.Enabled {
-		servers = append(servers, grpc2.New(cfg, es))
+		servers = append(servers, grpc3)
 	}
 
 	return servers

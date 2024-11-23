@@ -18,6 +18,7 @@ import (
 	"mzhn/notification-service/internal/storage/grpc/eventsapi"
 	"mzhn/notification-service/internal/storage/grpc/subscribersapi"
 	"mzhn/notification-service/internal/storage/pg/integrationstorage"
+	"mzhn/notification-service/internal/storage/pg/verificationstorage"
 	amqptransport "mzhn/notification-service/internal/transport/amqp"
 	"mzhn/notification-service/internal/transport/http"
 	"mzhn/notification-service/pb/authpb"
@@ -50,6 +51,8 @@ func New() (*App, func(), error) {
 		integrationservice.New,
 		wire.Bind(new(integrationservice.IntegrationsSaver), new(*integrationstorage.Storage)),
 		wire.Bind(new(integrationservice.IntegrationsProvider), new(*integrationstorage.Storage)),
+		wire.Bind(new(integrationservice.VerificationSaver), new(*verificationstorage.Storage)),
+		wire.Bind(new(integrationservice.VerificationProvider), new(*verificationstorage.Storage)),
 
 		notificationservice.New,
 		wire.Bind(new(notificationservice.UserProvider), new(*authapi.Api)),
@@ -63,6 +66,7 @@ func New() (*App, func(), error) {
 		eventsapi.New,
 		amqpclient.New,
 		integrationstorage.New,
+		verificationstorage.New,
 
 		_authpb,
 		_sspb,

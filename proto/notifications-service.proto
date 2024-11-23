@@ -11,6 +11,7 @@ service NotificationService {
 message LinkTelegramRequest {
   string userId = 1;
   string telegramUsername = 2;
+  string token = 3;
 }
 
 message LinkTelegramResponse{

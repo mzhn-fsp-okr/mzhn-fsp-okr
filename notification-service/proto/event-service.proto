@@ -31,7 +31,7 @@ message SportType {
 message SportSubtype {
   string id = 1;
   string name = 2;
-  SportSubtype parent = 3;
+  SportType parent = 3;
 }
 
 message EventInfo {
