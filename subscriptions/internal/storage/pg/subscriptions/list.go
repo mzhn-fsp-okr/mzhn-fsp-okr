@@ -21,6 +21,18 @@ func (s *Storage) GetUserEventsId(userId string) ([]string, error) {
 	}), nil
 }
 
+func (s *Storage) GetUserSportsId(userId string) ([]string, error) {
+	users := []*domain.SportSubscription{}
+	result := s.db.Select("sport_id").Where("user_id = ?", userId).Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return lo.Map(users, func(item *domain.SportSubscription, _ int) string {
+		return item.SportId
+	}), nil
+}
+
 func (s *Storage) GetUsersSubscribedToEvent(eventId string) ([]string, error) {
 	events := []*domain.EventSubscription{}
 	result := s.db.Select("user_id").Where("event_id = ?", eventId).Find(&events)
