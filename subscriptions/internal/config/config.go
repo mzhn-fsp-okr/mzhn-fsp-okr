@@ -64,12 +64,27 @@ func (as *EventService) ConnectionString() string {
 	return fmt.Sprintf("%s:%d", as.Host, as.Port)
 }
 
+type Amqp struct {
+	Host string `env:"AMQP_HOST" env-required:"true"`
+	Port int    `env:"AMQP_PORT" env-required:"true"`
+	User string `env:"AMQP_USER" env-required:"true"`
+	Pass string `env:"AMQP_PASS" env-required:"true"`
+
+	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-required:"true"`
+	NewSubscriptionQueue  string `env:"AMQP_NEW_SUBSCRIPTION_QUEUE" env-required:"true"`
+}
+
+func (am *Amqp) ConnectionString() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d", am.User, am.Pass, am.Host, am.Port)
+}
+
 type Config struct {
 	Env          string `env:"ENV" env-default:"local"`
 	App          App
 	Http         Http
 	Grpc         Grpc
 	Pg           Pg
+	Amqp         Amqp
 	AuthService  AuthService
 	EventService EventService
 }

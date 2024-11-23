@@ -8,19 +8,23 @@ package app
 
 import (
 	"fmt"
+	"github.com/rabbitmq/amqp091-go"
 	grpc2 "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log/slog"
 	"mzhn/subscriptions-service/internal/config"
 	"mzhn/subscriptions-service/internal/domain"
 	"mzhn/subscriptions-service/internal/services/authservice"
 	"mzhn/subscriptions-service/internal/services/subscriptionservice"
+	"mzhn/subscriptions-service/internal/storage/amqp"
 	"mzhn/subscriptions-service/internal/storage/pg/subscriptions"
 	"mzhn/subscriptions-service/internal/transport/grpc"
 	"mzhn/subscriptions-service/internal/transport/http"
 	"mzhn/subscriptions-service/pb/authpb"
 	"mzhn/subscriptions-service/pb/espb"
+	"mzhn/subscriptions-service/pkg/sl"
 )
 
 import (
@@ -40,15 +44,22 @@ func New() (*App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	service := subscriptionservice.New(storage, eventServiceClient)
+	channel, cleanup, err := _amqp(configConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	rabbitMQ := amqp.New(configConfig, channel)
+	service := subscriptionservice.New(storage, eventServiceClient, rabbitMQ)
 	authClient, err := _authpb(configConfig)
 	if err != nil {
+		cleanup()
 		return nil, nil, err
 	}
 	authserviceService := authservice.New(configConfig, authClient)
 	v := _servers(configConfig, service, authserviceService)
 	app := newApp(configConfig, v)
 	return app, func() {
+		cleanup()
 	}, nil
 }
 
@@ -100,4 +111,53 @@ func _db(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func _amqp(cfg *config.Config) (*amqp091.Channel, func(), error) {
+
+	cs := cfg.Amqp.ConnectionString()
+
+	conn, err := amqp091.Dial(cs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	channel, err := conn.Channel()
+	if err != nil {
+		return nil, func() {
+			conn.Close()
+		}, err
+	}
+	slog.Info("declaring notifications exchange", slog.String("exchange", cfg.Amqp.NotificationsExchange))
+	if err := channel.ExchangeDeclare(cfg.Amqp.NotificationsExchange, "direct", true, false, false, false, nil); err != nil {
+		slog.Error("failed to declare notifications queue", sl.Err(err))
+		return nil, func() {
+			channel.Close()
+			conn.Close()
+		}, err
+	}
+	slog.Info("declaring upcoming events queue", slog.String("queue", cfg.Amqp.NewSubscriptionQueue))
+	q, err := channel.QueueDeclare(cfg.Amqp.NewSubscriptionQueue, true, false, false, false, nil)
+	if err != nil {
+		slog.Error("failed to declare upcoming events queue", sl.Err(err))
+		return nil, func() {
+			channel.Close()
+			conn.Close()
+		}, err
+	}
+	slog.Info(
+		"binding upcoming events queue", slog.String("queue", cfg.Amqp.NewSubscriptionQueue), slog.String("exchange", cfg.Amqp.NotificationsExchange),
+	)
+	if err := channel.QueueBind(q.Name, cfg.Amqp.NewSubscriptionQueue, cfg.Amqp.NotificationsExchange, false, nil); err != nil {
+		slog.Error("failed to bind new events queue", sl.Err(err))
+		return nil, func() {
+			channel.Close()
+			conn.Close()
+		}, err
+	}
+
+	return channel, func() {
+		channel.Close()
+		conn.Close()
+	}, nil
 }

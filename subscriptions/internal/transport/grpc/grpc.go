@@ -119,7 +119,7 @@ func (s *Server) GetUsersFromEventByDaysLeft(req *sspb.UsersEventByDaysRequest, 
 
 // NotifyUser implements sspb.SubscriptionServiceServer.
 func (s *Server) NotifyUser(ctx context.Context, req *sspb.NotifyUserRequest) (*emptypb.Empty, error) {
-	if err := s.ss.NotifyUser(req.UserId, req.DaysLeft); err != nil {
+	if err := s.ss.NotifyUser(req.UserId, req.DaysLeft, req.EventId); err != nil {
 		return nil, err
 	}
 

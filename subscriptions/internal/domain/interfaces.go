@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"mzhn/subscriptions-service/pb/espb"
 	"mzhn/subscriptions-service/pb/sspb"
 )
@@ -15,7 +16,7 @@ type SubscriptionsStorage interface {
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
 	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
-	NotifyUser(userId string, daysLeft sspb.DaysLeft) error
+	NotifyUser(userId string, daysLeft sspb.DaysLeft, eventId string) error
 }
 
 type SubscriptionsService interface {
@@ -28,5 +29,9 @@ type SubscriptionsService interface {
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
 	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
-	NotifyUser(userId string, daysLeft sspb.DaysLeft) error
+	NotifyUser(userId string, daysLeft sspb.DaysLeft, eventId string) error
+}
+
+type SubscribeNotificationPublisher interface {
+	NotifyAboutSubscription(ctx context.Context, userId string, entityId string, isEvent bool) error
 }

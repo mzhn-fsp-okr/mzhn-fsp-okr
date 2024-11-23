@@ -19,27 +19,45 @@ type Service struct {
 	l       *slog.Logger
 	storage domain.SubscriptionsStorage
 	es      espb.EventServiceClient
+	pub     domain.SubscribeNotificationPublisher
 }
 
-func New(storage domain.SubscriptionsStorage, es espb.EventServiceClient) *Service {
+func New(storage domain.SubscriptionsStorage, es espb.EventServiceClient, pub domain.SubscribeNotificationPublisher) *Service {
 	return &Service{
 		l:       slog.With(sl.Module(("SubscriptionsService"))),
 		storage: storage,
 		es:      es,
+		pub:     pub,
 	}
 }
 func (s *Service) SubscribeToSport(dto *domain.SportSubscription) (*domain.SportSubscription, error) {
 	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToSport"))
 
 	log.Debug("creating sport subscription", slog.Any("userId", dto.UserId), slog.Any("sportId", dto.SportId))
-	return s.storage.CreateSport(dto)
+	sport, err := s.storage.CreateSport(dto)
+	if err != nil {
+		log.Error("cannot subscribe to sport", sl.Err(err))
+		return nil, err
+	}
+
+	s.pub.NotifyAboutSubscription(context.Background(), dto.UserId, dto.SportId, false)
+
+	return sport, nil
 }
 
 func (s *Service) SubscribeToEvent(dto *domain.EventSubscription) (*domain.EventSubscription, error) {
 	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToEvent"))
 
 	log.Debug("creating event subscription", slog.Any("userId", dto.UserId), slog.Any("eventId", dto.EventId))
-	return s.storage.CreateEvent(dto)
+	event, err := s.storage.CreateEvent(dto)
+	if err != nil {
+		log.Error("cannot subscribe to event", sl.Err(err))
+		return nil, err
+	}
+
+	s.pub.NotifyAboutSubscription(context.Background(), dto.UserId, dto.EventId, true)
+
+	return event, nil
 }
 
 func (s *Service) UnsubscribeFromSport(dto *domain.SportSubscription) error {
@@ -248,9 +266,9 @@ func (s *Service) GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.Days
 	return s.storage.GetUsersFromEventByDaysLeft(eventId, daysLeft)
 }
 
-func (s *Service) NotifyUser(userId string, daysLeft sspb.DaysLeft) error {
+func (s *Service) NotifyUser(userId string, daysLeft sspb.DaysLeft, eventId string) error {
 	log := s.l.With(sl.Method("SubscriptionsService.NotifyUser"))
 
 	log.Debug("notify user", slog.Any("userId", userId), slog.Any("daysLeft", daysLeft.String()))
-	return s.storage.NotifyUser(userId, daysLeft)
+	return s.storage.NotifyUser(userId, daysLeft, eventId)
 }

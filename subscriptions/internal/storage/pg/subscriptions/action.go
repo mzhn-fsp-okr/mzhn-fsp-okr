@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func (s *Storage) NotifyUser(userId string, daysLeft sspb.DaysLeft) error {
+func (s *Storage) NotifyUser(userId string, daysLeft sspb.DaysLeft, eventId string) error {
 	f := ""
 	switch daysLeft {
 	case sspb.DaysLeft_Month:
@@ -20,7 +20,7 @@ func (s *Storage) NotifyUser(userId string, daysLeft sspb.DaysLeft) error {
 		return fmt.Errorf("wrong days left enum")
 	}
 
-	if result := s.db.Model(&domain.EventSubscription{}).Where("user_id = ?", userId).Update(f, time.Now()); result.Error != nil {
+	if result := s.db.Model(&domain.EventSubscription{}).Where("user_id = ? AND event_id = ?", userId, eventId).Update(f, time.Now()); result.Error != nil {
 		s.logger.Error("cannot notify user (DB)")
 		return result.Error
 	}
