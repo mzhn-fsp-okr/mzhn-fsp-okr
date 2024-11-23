@@ -18,8 +18,8 @@ if HUGGINGFACE_MODEL:
         model_id=HUGGINGFACE_MODEL,
         task="text-generation",
         pipeline_kwargs=dict(
-            max_new_tokens=512,
-            temperature=0.7,
+            max_new_tokens=1024,
+            temperature=0.1,
             do_sample=True,
         ),
     )
@@ -31,8 +31,8 @@ elif OLLAMA_MODEL:
 
     chat = ChatOllama(
         model=OLLAMA_MODEL,
-        temperature=0.7,
-        max_tokens=512,
+        temperature=0.1,
+        max_tokens=1024,
     )
 
 else:

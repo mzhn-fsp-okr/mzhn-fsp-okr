@@ -35,21 +35,6 @@ black = "^24.10.0"
 matplotlib = "^3.9.2"
 ipykernel = "^6.29.5"
 
-[[tool.poetry.source]]
-name = "torchcpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
-
-[[tool.poetry.source]]
-name = "torch_rocm"
-url = "https://download.pytorch.org/whl/rocm6.2"
-priority = "explicit"
-
-[[tool.poetry.source]]
-name = "torch_cuda"
-url = "https://download.pytorch.org/whl/cu121"
-priority = "explicit"
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
