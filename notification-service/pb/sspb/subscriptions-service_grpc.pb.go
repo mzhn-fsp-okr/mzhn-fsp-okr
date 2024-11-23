@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SubscriptionServiceClient interface {
 	GetUsersSubscribedToSport(ctx context.Context, in *SubscriptionRequest, opts ...grpc.CallOption) (SubscriptionService_GetUsersSubscribedToSportClient, error)
 	GetUsersSubscribedToEvent(ctx context.Context, in *SubscriptionRequest, opts ...grpc.CallOption) (SubscriptionService_GetUsersSubscribedToEventClient, error)
+	GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (SubscriptionService_GetUsersFromEventByDaysLeftClient, error)
 }
 
 type subscriptionServiceClient struct {
@@ -98,12 +99,45 @@ func (x *subscriptionServiceGetUsersSubscribedToEventClient) Recv() (*Subscripti
 	return m, nil
 }
 
+func (c *subscriptionServiceClient) GetUsersFromEventByDaysLeft(ctx context.Context, in *UsersEventByDaysRequest, opts ...grpc.CallOption) (SubscriptionService_GetUsersFromEventByDaysLeftClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SubscriptionService_ServiceDesc.Streams[2], "/subscriptions.SubscriptionService/GetUsersFromEventByDaysLeft", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &subscriptionServiceGetUsersFromEventByDaysLeftClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SubscriptionService_GetUsersFromEventByDaysLeftClient interface {
+	Recv() (*UsersEventByDaysResponse, error)
+	grpc.ClientStream
+}
+
+type subscriptionServiceGetUsersFromEventByDaysLeftClient struct {
+	grpc.ClientStream
+}
+
+func (x *subscriptionServiceGetUsersFromEventByDaysLeftClient) Recv() (*UsersEventByDaysResponse, error) {
+	m := new(UsersEventByDaysResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // SubscriptionServiceServer is the server API for SubscriptionService service.
 // All implementations must embed UnimplementedSubscriptionServiceServer
 // for forward compatibility
 type SubscriptionServiceServer interface {
 	GetUsersSubscribedToSport(*SubscriptionRequest, SubscriptionService_GetUsersSubscribedToSportServer) error
 	GetUsersSubscribedToEvent(*SubscriptionRequest, SubscriptionService_GetUsersSubscribedToEventServer) error
+	GetUsersFromEventByDaysLeft(*UsersEventByDaysRequest, SubscriptionService_GetUsersFromEventByDaysLeftServer) error
 	mustEmbedUnimplementedSubscriptionServiceServer()
 }
 
@@ -116,6 +150,9 @@ func (UnimplementedSubscriptionServiceServer) GetUsersSubscribedToSport(*Subscri
 }
 func (UnimplementedSubscriptionServiceServer) GetUsersSubscribedToEvent(*SubscriptionRequest, SubscriptionService_GetUsersSubscribedToEventServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetUsersSubscribedToEvent not implemented")
+}
+func (UnimplementedSubscriptionServiceServer) GetUsersFromEventByDaysLeft(*UsersEventByDaysRequest, SubscriptionService_GetUsersFromEventByDaysLeftServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetUsersFromEventByDaysLeft not implemented")
 }
 func (UnimplementedSubscriptionServiceServer) mustEmbedUnimplementedSubscriptionServiceServer() {}
 
@@ -172,6 +209,27 @@ func (x *subscriptionServiceGetUsersSubscribedToEventServer) Send(m *Subscriptio
 	return x.ServerStream.SendMsg(m)
 }
 
+func _SubscriptionService_GetUsersFromEventByDaysLeft_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(UsersEventByDaysRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SubscriptionServiceServer).GetUsersFromEventByDaysLeft(m, &subscriptionServiceGetUsersFromEventByDaysLeftServer{stream})
+}
+
+type SubscriptionService_GetUsersFromEventByDaysLeftServer interface {
+	Send(*UsersEventByDaysResponse) error
+	grpc.ServerStream
+}
+
+type subscriptionServiceGetUsersFromEventByDaysLeftServer struct {
+	grpc.ServerStream
+}
+
+func (x *subscriptionServiceGetUsersFromEventByDaysLeftServer) Send(m *UsersEventByDaysResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // SubscriptionService_ServiceDesc is the grpc.ServiceDesc for SubscriptionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +246,11 @@ var SubscriptionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetUsersSubscribedToEvent",
 			Handler:       _SubscriptionService_GetUsersSubscribedToEvent_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetUsersFromEventByDaysLeft",
+			Handler:       _SubscriptionService_GetUsersFromEventByDaysLeft_Handler,
 			ServerStreams: true,
 		},
 	},
