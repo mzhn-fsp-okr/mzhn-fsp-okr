@@ -16,17 +16,8 @@ type App struct {
 	Version string `env:"APP_VERSION" env-required:"true"`
 }
 
-type AuthService struct {
-	Host string `env:"AUTH_SERVICE_HOST" env-required:"true"`
-	Port int    `env:"AUTH_SERVICE_PORT" env-required:"true"`
-}
-
-func (as *AuthService) ConnectionString() string {
-	return fmt.Sprintf("%s:%d", as.Host, as.Port)
-}
-
 type Cron struct {
-	Minutes int `env:"INTERVAL" env-default:"1"` // in minutes
+	Minutes int `env:"CRON_INTERVAL_MIN" env-default:"30"` // in minutes
 }
 
 type Amqp struct {
@@ -64,7 +55,6 @@ func (as *SubscriptionsService) ConnectionString() string {
 type Config struct {
 	Env                  string `env:"ENV" env-default:"local"`
 	App                  App
-	AuthService          AuthService
 	EventService         EventService
 	SubscriptionsService SubscriptionsService
 	Cron                 Cron

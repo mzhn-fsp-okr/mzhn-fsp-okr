@@ -6,6 +6,7 @@ include:
   # - parser.yaml
   # - ai-search.yaml
   - notification-service.yaml
+  - notifications-cron.yaml
 
 services:
   nginx:

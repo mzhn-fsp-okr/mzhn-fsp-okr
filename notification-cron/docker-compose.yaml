@@ -1,32 +1,7 @@
 services:
-  subscriptions-service:
-    container_name: mzhn-subscriptions-service
+  notifications-cron-service:
+    container_name: mzhn-notifications-cron
     build:
       context: .
     env_file:
       - .env
-    environment:
-      WAIT_HOSTS: pg:5432
-      PG_HOST: pg
-      PG_PORT: 5432
-      ENV: prod
-    depends_on:
-      - pg-ss
-    ports:
-      - "${HTTP_PORT}:${HTTP_PORT}"
-
-  pg-ss:
-    image: postgres:14.13-alpine3.20
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${PG_NAME}
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASS}
-    volumes:
-      - pg-ss-data:/var/lib/postgresql/data
-    ports:
-      - 5433:5432
-
-volumes:
-  pg-ss-data:
-    name: mzhn-ss-pg
