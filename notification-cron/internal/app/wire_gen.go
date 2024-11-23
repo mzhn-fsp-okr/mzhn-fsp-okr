@@ -16,7 +16,6 @@ import (
 	"mzhn/notification-cron/internal/domain"
 	"mzhn/notification-cron/internal/services/cronservice"
 	"mzhn/notification-cron/internal/storage/amqp"
-	"mzhn/notification-cron/pb/authpb"
 	"mzhn/notification-cron/pb/espb"
 	"mzhn/notification-cron/pb/sspb"
 	"mzhn/notification-cron/pkg/sl"
@@ -58,16 +57,6 @@ func _servers(cfg *config.Config, cs domain.CronService) []Server {
 	servers = append(servers, cron.New(cfg, cs))
 
 	return servers
-}
-
-func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
-	addr := cfg.AuthService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-
-	return authpb.NewAuthClient(conn), nil
 }
 
 func _eventspb(cfg *config.Config) (espb.EventServiceClient, error) {

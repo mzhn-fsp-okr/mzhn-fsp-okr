@@ -12,8 +12,6 @@ run: build
 PB=pb
 ESPB=$(PB)/espb
 ESPROTO=proto/event-service.proto
-AUTHPB=$(PB)/authpb
-AUTHPROTO=proto/auth.proto
 SUBPB=$(PB)/sspb
 SUBPROTO=proto/subscriptions-service.proto
 protobuf:
@@ -25,13 +23,6 @@ protobuf:
 		--go-grpc_out=. \
 		--go-grpc_opt=M$(ESPROTO)=$(ESPB) \
 		$(ESPROTO)
-	
-	protoc  \
-		--go_out=. \
-		--go_opt=M$(AUTHPROTO)=$(AUTHPB) \
-		--go-grpc_out=. \
-		--go-grpc_opt=M$(AUTHPROTO)=$(AUTHPB) \
-		$(AUTHPROTO)
 
 	protoc  \
 		--go_out=. \
