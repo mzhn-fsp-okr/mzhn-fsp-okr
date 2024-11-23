@@ -26,7 +26,35 @@ func New(cfg *config.Config, client espb.EventServiceClient) *Api {
 	}
 }
 
-func (a *Api) Find(ctx context.Context, id string) (*domain.EventInfo, error) {
+func (a *Api) Sport(ctx context.Context, id string) (*domain.SportTypeWithSubtypes, error) {
+	fn := "events-api.Event"
+	log := a.l.With(sl.Method(fn))
+
+	log.Debug("try to find event", slog.String("id", id))
+	res, err := a.client.Sport(ctx, &espb.SportRequest{
+		Id: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sp := res.SportType
+
+	spsp := &domain.SportTypeWithSubtypes{
+		Id:   sp.Id,
+		Name: sp.Name,
+		Subtypes: lo.Map(sp.Subtypes, func(st *espb.SportSubtype2, _ int) domain.SportSubtype2 {
+			return domain.SportSubtype2{
+				Id:   st.Id,
+				Name: st.Name,
+			}
+		}),
+	}
+
+	return spsp, nil
+}
+
+func (a *Api) Event(ctx context.Context, id string) (*domain.EventInfo, error) {
 	fn := "events-api.Event"
 	log := a.l.With(sl.Method(fn))
 

@@ -45,6 +45,7 @@ type Amqp struct {
 	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-default:"notifications"`
 	NewEventsQueue        string `env:"AMQP_NEW_EVENTS_EVENTS_QUEUE" env-default:"new-events"`
 	UpcomingEventsQueue   string `env:"AMQP_UPCOMING_EVENTS_QUEUE" env-default:"upcoming-events"`
+	SubscriptionsQueue    string `env:"AMQP_NEW_SUBSCRIPTION_QUEUE" env-default:"new-subscriptions"`
 
 	SubscriptionExchange string `env:"AMQP_SUBSCRIPTIONS_EXCHANGE" env-default:"subscriptions"`
 	TelegramQueue        string `env:"AMQP_TELEGRAM_QUEUE" env-default:"telegram-queue"`

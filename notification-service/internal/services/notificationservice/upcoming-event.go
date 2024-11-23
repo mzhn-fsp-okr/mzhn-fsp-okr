@@ -32,31 +32,5 @@ func (s *Service) ProcessUpcomingEvent(ctx context.Context, msg *domain.Upcoming
 		return nil
 	}
 
-	event, err := s.ep.Find(ctx, msg.EventId)
-	if err != nil {
-		log.Error("failed getting event", sl.Err(err))
-		return fmt.Errorf("%s: %w", fn, err)
-	}
-
-	log.Debug("found event", slog.Any("event", event))
-
-	if event == nil {
-		return nil
-	}
-
-	if integrations.TelegramUsername != nil {
-		if err := s.notificator.SendTelegram(ctx, *integrations.TelegramUsername, event, domain.EventTypeUpcoming); err != nil {
-			log.Error("failed sending notification to subscriber (telegram)", sl.Err(err))
-			return fmt.Errorf("%s: %w", fn, err)
-		}
-	}
-
-	if integrations.WannaMail {
-		if err := s.notificator.SendMail(ctx, user.Email, event, domain.EventTypeUpcoming); err != nil {
-			log.Error("failed sending notification to subscriber (mail)", sl.Err(err))
-			return fmt.Errorf("%s: %w", fn, err)
-		}
-	}
-
-	return nil
+	return s.pushEvent(ctx, user, msg.EventId, integrations, domain.EventTypeUpcoming)
 }

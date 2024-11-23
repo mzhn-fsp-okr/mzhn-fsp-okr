@@ -10,7 +10,7 @@ import (
 
 type SubscribersProvider interface {
 	EventSubscribers(ctx context.Context, eventId string) ([]string, error)
-	// SportSubscribers(ctx context.Context, sportId string) ([]string, error)
+	SportSubs(ctx context.Context, sportId string) ([]string, error)
 }
 
 type UserProvider interface {
@@ -22,22 +22,26 @@ type IntegrationProvider interface {
 }
 
 type Notificator interface {
-	SendTelegram(ctx context.Context, username string, event *domain.EventInfo, eventType domain.EventType) error
-	SendMail(ctx context.Context, mail string, event *domain.EventInfo, eventType domain.EventType) error
+	SendTelegram(ctx context.Context, event map[string]any) error
+	SendMail(ctx context.Context, event map[string]any) error
 }
 
 type EventProvider interface {
-	Find(ctx context.Context, eventId string) (*domain.EventInfo, error)
+	Event(ctx context.Context, eventId string) (*domain.EventInfo, error)
+}
+type SportProvider interface {
+	Sport(ctx context.Context, sportId string) (*domain.SportTypeWithSubtypes, error)
 }
 
 type Service struct {
-	l           *slog.Logger
-	cfg         *config.Config
-	sp          SubscribersProvider
-	ip          IntegrationProvider
-	up          UserProvider
-	ep          EventProvider
-	notificator Notificator
+	l             *slog.Logger
+	cfg           *config.Config
+	sp            SubscribersProvider
+	ip            IntegrationProvider
+	up            UserProvider
+	ep            EventProvider
+	sportProvider SportProvider
+	notificator   Notificator
 }
 
 func New(
@@ -47,14 +51,16 @@ func New(
 	notificator Notificator,
 	up UserProvider,
 	ep EventProvider,
+	sportProvider SportProvider,
 ) *Service {
 	return &Service{
-		l:           slog.With(sl.Module("notification-service")),
-		cfg:         cfg,
-		sp:          sp,
-		ip:          ip,
-		up:          up,
-		ep:          ep,
-		notificator: notificator,
+		l:             slog.With(sl.Module("notification-service")),
+		cfg:           cfg,
+		sp:            sp,
+		ip:            ip,
+		up:            up,
+		ep:            ep,
+		notificator:   notificator,
+		sportProvider: sportProvider,
 	}
 }

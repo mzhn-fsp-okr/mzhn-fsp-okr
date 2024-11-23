@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"mzhn/notification-service/internal/config"
-	"mzhn/notification-service/internal/domain"
 	"mzhn/notification-service/pkg/sl"
 
 	"github.com/labstack/gommon/log"
@@ -27,9 +26,9 @@ func New(cfg *config.Config, channel *amqp.Channel) *RabbitMQ {
 	}
 }
 
-func (r *RabbitMQ) SendTelegram(ctx context.Context, username string, event *domain.EventInfo, eType domain.EventType) error {
+func (r *RabbitMQ) SendTelegram(ctx context.Context, data map[string]any) error {
 
-	message, err := eventJson(eType, username, event)
+	message, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -45,9 +44,8 @@ func (r *RabbitMQ) SendTelegram(ctx context.Context, username string, event *dom
 	return nil
 }
 
-func (r *RabbitMQ) SendMail(ctx context.Context, email string, event *domain.EventInfo, eType domain.EventType) error {
-
-	message, err := eventJson(eType, email, event)
+func (r *RabbitMQ) SendMail(ctx context.Context, data map[string]any) error {
+	message, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -61,17 +59,4 @@ func (r *RabbitMQ) SendMail(ctx context.Context, email string, event *domain.Eve
 	}
 
 	return nil
-}
-
-func eventJson(t domain.EventType, r string, e *domain.EventInfo) ([]byte, error) {
-	eventJson, err := json.Marshal(map[string]any{
-		"eventType": t.String(),
-		"receiver":  r,
-		"event":     e,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return eventJson, nil
 }

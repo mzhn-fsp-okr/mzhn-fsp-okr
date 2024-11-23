@@ -57,6 +57,7 @@ func New() (*App, func(), error) {
 		notificationservice.New,
 		wire.Bind(new(notificationservice.UserProvider), new(*authapi.Api)),
 		wire.Bind(new(notificationservice.EventProvider), new(*eventsapi.Api)),
+		wire.Bind(new(notificationservice.SportProvider), new(*eventsapi.Api)),
 		wire.Bind(new(notificationservice.Notificator), new(*amqpclient.RabbitMQ)),
 		wire.Bind(new(notificationservice.SubscribersProvider), new(*subscribersapi.Api)),
 		wire.Bind(new(notificationservice.IntegrationProvider), new(*integrationstorage.Storage)),

@@ -81,7 +81,6 @@ func (s *Service) NotifyUsers(ctx context.Context) error {
 		s.l.Error("Error while read notifyUser channel", sl.Err(err))
 		return err
 	case <-ctx.Done():
-		s.l.Error("Context error ", sl.Err(err))
 		return ctx.Err()
 	}
 }

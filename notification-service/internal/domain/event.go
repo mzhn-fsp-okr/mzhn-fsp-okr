@@ -13,6 +13,12 @@ type DateRange struct {
 	To   time.Time `json:"to"`
 }
 
+type NewSubscriptionsMessage struct {
+	EntityId string `json:"entityId"`
+	UserId   string `json:"userId"`
+	IsEvent  bool   `json:"isEvent"`
+}
+
 type UpcomingEventMessage struct {
 	UserId   string `json:"userId"`
 	EventId  string `json:"eventId"`
@@ -28,6 +34,10 @@ type SportSubtype struct {
 	Id     string    `json:"id"`
 	Name   string    `json:"name"`
 	Parent SportType `json:"sportType"`
+}
+type SportSubtype2 struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type EventInfo struct {
@@ -47,6 +57,7 @@ type EventType int
 const (
 	EventTypeNew EventType = iota
 	EventTypeUpcoming
+	EventNewSub
 )
 
 func (e EventType) String() string {

@@ -76,7 +76,7 @@ func New() (*App, func(), error) {
 		return nil, nil, err
 	}
 	eventsapiApi := eventsapi.New(configConfig, eventServiceClient)
-	notificationserviceService := notificationservice.New(configConfig, subscribersapiApi, storage, rabbitMQ, api, eventsapiApi)
+	notificationserviceService := notificationservice.New(configConfig, subscribersapiApi, storage, rabbitMQ, api, eventsapiApi, eventsapiApi)
 	rabbitMqConsumer := amqp2.New(configConfig, channel, notificationserviceService)
 	grpcServer := grpc.New(configConfig, integrationserviceService)
 	v := _servers(server, rabbitMqConsumer, grpcServer)

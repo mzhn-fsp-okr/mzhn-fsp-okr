@@ -14,8 +14,7 @@ func (s *Service) ProcessNewEvent(ctx context.Context, event *domain.EventInfo) 
 	log := s.l.With(sl.Method(fn))
 
 	log.Debug("getting subscribers for new event", slog.String("eventId", event.Id))
-	// TODO UPDATE TO SportSubscribers
-	subscribers, err := s.sp.EventSubscribers(ctx, event.Id)
+	subscribers, err := s.sp.SportSubs(ctx, event.SportSubtype.Parent.Id)
 	if err != nil {
 		log.Error("failed getting subscribers for new event", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)
@@ -41,18 +40,9 @@ func (s *Service) ProcessNewEvent(ctx context.Context, event *domain.EventInfo) 
 			return fmt.Errorf("%s: %w", fn, err)
 		}
 
-		if integrations.TelegramUsername != nil {
-			if err := s.notificator.SendTelegram(ctx, *integrations.TelegramUsername, event, domain.EventTypeNew); err != nil {
-				log.Error("failed sending notification to subscriber (telegram)", sl.Err(err))
-				return fmt.Errorf("%s: %w", fn, err)
-			}
-		}
-
-		if integrations.WannaMail {
-			if err := s.notificator.SendMail(ctx, user.Email, event, domain.EventTypeNew); err != nil {
-				log.Error("failed sending notification to subscriber (mail)", sl.Err(err))
-				return fmt.Errorf("%s: %w", fn, err)
-			}
+		if err := s.pushEvent(ctx, user, event.Id, integrations, domain.EventTypeNew); err != nil {
+			log.Error("failed sending notification to subscriber", sl.Err(err))
+			return fmt.Errorf("%s: %w", fn, err)
 		}
 	}
 
