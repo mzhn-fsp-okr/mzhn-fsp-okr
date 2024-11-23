@@ -2,11 +2,13 @@ from langchain_core.language_models import BaseChatModel
 
 from config import (
     HUGGINGFACE_MODEL,
+    
     GIGACHAT_SCOPE,
     GIGACHAT_CREDENTIALS,
     GIGACHAT_MODEL,
     
-    OLLAMA_MODEL
+    OLLAMA_MODEL,
+    OLLAMA_BASE_URL
 )
 
 chat: BaseChatModel = None
@@ -33,6 +35,7 @@ elif OLLAMA_MODEL:
         model=OLLAMA_MODEL,
         temperature=0.1,
         max_tokens=1024,
+        base_url=OLLAMA_BASE_URL
     )
 
 else:
