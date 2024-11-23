@@ -10,7 +10,7 @@ import (
 )
 
 type IntegrationsSaver interface {
-	Save(context.Context, *domain.SetIntegrationsRequest) error
+	Save(context.Context, *domain.SetIntegrations) error
 }
 
 type Service struct {
@@ -27,7 +27,7 @@ func New(cfg *config.Config, is IntegrationsSaver) *Service {
 	}
 }
 
-func (s *Service) Save(ctx context.Context, req *domain.SetIntegrationsRequest) error {
+func (s *Service) Save(ctx context.Context, req *domain.SetIntegrations) error {
 	fn := "integrationservice.Save"
 	log := s.l.With(sl.Module(fn))
 

@@ -12,15 +12,14 @@ import (
 )
 
 type App struct {
-	Name    string `env:"APP_NAME" env-required:"true"`
-	Version string `env:"APP_VERSION" env-required:"true"`
+	Name    string `env:"APP_NAME" env-default:"mzhn-notification-service"`
+	Version string `env:"APP_VERSION" env-default:"@local"`
 }
 
 type Http struct {
-	Enabled bool   `env:"HTTP_ENABLED" env-required:"true" env-default:"false"`
-	Host    string `env:"HTTP_HOST" env-default:"0.0.0.0"`
-	Port    int    `env:"HTTP_PORT"`
-	Cors    Cors
+	Host string `env:"HTTP_HOST" env-default:"0.0.0.0"`
+	Port int    `env:"HTTP_PORT" env-default:"80"`
+	Cors Cors
 }
 
 type Cors struct {
@@ -33,10 +32,13 @@ type Amqp struct {
 	User string `env:"AMQP_USER" env-required:"true"`
 	Pass string `env:"AMQP_PASS" env-required:"true"`
 
-	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-required:"true"`
+	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-default:"notifications"`
+	NewEventsQueue        string `env:"AMQP_NEW_EVENTS_EVENTS_QUEUE" env-default:"new-events"`
+	UpcomingEventsQueue   string `env:"AMQP_UPCOMING_EVENTS_QUEUE" env-default:"upcoming-events"`
 
-	NewEventsQueue      string `env:"AMQP_NEW_EVENTS_EVENTS_QUEUE" env-required:"true"`
-	UpcomingEventsQueue string `env:"AMQP_UPCOMING_EVENTS_QUEUE" env-required:"true"`
+	SubscriptionExchange string `env:"AMQP_SUBSCRIPTIONS_EXCHANGE" env-default:"subscriptions"`
+	TelegramQueue        string `env:"AMQP_TELEGRAM_QUEUE" env-default:"telegram-queue"`
+	MailQueue            string `env:"AMQP_MAIL_QUEUE" env-default:"mail-queue"`
 }
 
 func (am *Amqp) ConnectionString() string {
@@ -56,7 +58,7 @@ func (pg *Pg) ConnectionString() string {
 }
 
 type AuthService struct {
-	Protocol string `env:"AUTH_SERVICE_PROTOCOL" env-default:"http"`
+	Protocol string `env:"AUTH_SERVICE_PROTOCOL" env-default:"grpc"`
 	Host     string `env:"AUTH_SERVICE_HOST" env-required:"true"`
 	Port     int    `env:"AUTH_SERVICE_PORT" env-required:"true"`
 }
@@ -65,12 +67,24 @@ func (as *AuthService) ConnectionString() string {
 	return fmt.Sprintf("%s://%s:%d", as.Protocol, as.Host, as.Port)
 }
 
+type SubscriptionService struct {
+	Protocol string `env:"SUBSCRIPTION_SERVICE_PROTOCOL" env-default:"grpc"`
+	Host     string `env:"SUBSCRIPTION_SERVICE_HOST" env-required:"true"`
+	Port     int    `env:"SUBSCRIPTION_SERVICE_PORT" env-required:"true"`
+}
+
+func (s *SubscriptionService) ConnectionString() string {
+	return fmt.Sprintf("%s://%s:%d", s.Protocol, s.Host, s.Port)
+}
+
 type Config struct {
-	Env  string `env:"ENV" env-default:"local"`
-	App  App
-	Http Http
-	Amqp Amqp
-	Pg   Pg
+	Env                 string `env:"ENV" env-default:"local"`
+	App                 App
+	Http                Http
+	Amqp                Amqp
+	Pg                  Pg
+	AuthService         AuthService
+	SubscriptionService SubscriptionService
 }
 
 func New() *Config {

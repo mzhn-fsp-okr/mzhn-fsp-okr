@@ -1,6 +1,3 @@
-//go:build wireinject
-// +build wireinject
-
 package app
 
 import (
@@ -11,10 +8,13 @@ import (
 
 	"mzhn/notification-service/internal/config"
 	"mzhn/notification-service/internal/services/authservice"
-	"mzhn/notification-service/internal/services/eventservice"
-	"mzhn/notification-service/internal/storage/amqp"
-	"mzhn/notification-service/internal/storage/pg/eventstorage"
-	esgrpc "mzhn/notification-service/internal/transport/grpc"
+	"mzhn/notification-service/internal/services/integrationservice"
+	"mzhn/notification-service/internal/services/notificationservice"
+	amqpclient "mzhn/notification-service/internal/storage/amqp"
+	"mzhn/notification-service/internal/storage/grpc/authapi"
+	"mzhn/notification-service/internal/storage/grpc/subscribersapi"
+	"mzhn/notification-service/internal/storage/pg/integrationstorage"
+	amqptransport "mzhn/notification-service/internal/transport/amqp"
 	"mzhn/notification-service/internal/transport/http"
 	"mzhn/notification-service/pb/authpb"
 	"mzhn/notification-service/pkg/sl"
@@ -32,19 +32,28 @@ func New() (*App, func(), error) {
 		newApp,
 		_servers,
 
-		eventservice.New,
-		wire.Bind(new(eventservice.EventProvider), new(*eventstorage.Storage)),
-		wire.Bind(new(eventservice.EventLoader), new(*eventstorage.Storage)),
-		wire.Bind(new(eventservice.EventManager), new(*eventstorage.Storage)),
-		wire.Bind(new(eventservice.NotificationPublisher), new(*amqp.RabbitMQ)),
+		http.New,
+		amqptransport.New,
 
 		authservice.New,
+		wire.Bind(new(authservice.ProfileProvider), new(*authapi.Api)),
 
-		eventstorage.New,
+		integrationservice.New,
+		wire.Bind(new(integrationservice.IntegrationsSaver), new(*integrationstorage.Storage)),
 
-		amqp.New,
+		notificationservice.New,
+		wire.Bind(new(notificationservice.UserProvider), new(*authapi.Api)),
+		wire.Bind(new(notificationservice.Notificator), new(*amqpclient.RabbitMQ)),
+		wire.Bind(new(notificationservice.SubscribersProvider), new(*subscribersapi.Api)),
+		wire.Bind(new(notificationservice.IntegrationProvider), new(*integrationstorage.Storage)),
+
+		authapi.New,
+		subscribersapi.New,
+		amqpclient.New,
+		integrationstorage.New,
 
 		_authpb,
+		_sbpb,
 		_amqp,
 		_pg,
 		config.New,
@@ -80,17 +89,23 @@ func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 	return authpb.NewAuthClient(conn), nil
 }
 
-func _servers(cfg *config.Config, es *eventservice.Service, as *authservice.Service) []Server {
+func _sbpb(cfg *config.Config) (authpb.AuthClient, error) {
+	addr := cfg.SubscriptionService.ConnectionString()
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	return authpb.NewAuthClient(conn), nil
+}
+
+func _servers(
+	http *http.Server,
+	amqp *amqptransport.RabbitMqConsumer,
+) []Server {
 	servers := make([]Server, 0, 2)
-
-	if cfg.Http.Enabled {
-		servers = append(servers, http.New(cfg, as, es))
-	}
-
-	if cfg.Grpc.Enabled {
-		servers = append(servers, esgrpc.New(cfg, es))
-	}
-
+	servers = append(servers, amqp)
+	servers = append(servers, http)
 	return servers
 }
 
@@ -110,32 +125,16 @@ func _amqp(cfg *config.Config) (*amqp091.Channel, func(), error) {
 		}, err
 	}
 
-	slog.Info("declaring notifications exchange", slog.String("exchange", cfg.Amqp.NotificationsExchange))
-	if err := channel.ExchangeDeclare(cfg.Amqp.NotificationsExchange, "direct", true, false, false, false, nil); err != nil {
-		slog.Error("failed to declare notifications queue", sl.Err(err))
+	if err := amqp_setup_exchange(cfg, channel, cfg.Amqp.NotificationsExchange, cfg.Amqp.NewEventsQueue, cfg.Amqp.UpcomingEventsQueue); err != nil {
+		slog.Error("failed to setup notifications exchange", sl.Err(err))
 		return nil, func() {
 			channel.Close()
 			conn.Close()
 		}, err
 	}
 
-	slog.Info("declaring new events queue", slog.String("queue", cfg.Amqp.NewEventsQueue))
-	q, err := channel.QueueDeclare(cfg.Amqp.NewEventsQueue, true, false, false, false, nil)
-	if err != nil {
-		slog.Error("failed to declare new events queue", sl.Err(err))
-		return nil, func() {
-			channel.Close()
-			conn.Close()
-		}, err
-	}
-
-	slog.Info(
-		"binding new events queue",
-		slog.String("queue", cfg.Amqp.NewEventsQueue),
-		slog.String("exchange", cfg.Amqp.NotificationsExchange),
-	)
-	if err := channel.QueueBind(q.Name, cfg.Amqp.NewEventsQueue, cfg.Amqp.NotificationsExchange, false, nil); err != nil {
-		slog.Error("failed to bind new events queue", sl.Err(err))
+	if err := amqp_setup_exchange(cfg, channel, cfg.Amqp.SubscriptionExchange, cfg.Amqp.TelegramQueue, cfg.Amqp.MailQueue); err != nil {
+		slog.Error("failed to setup subscribtions exchange", sl.Err(err))
 		return nil, func() {
 			channel.Close()
 			conn.Close()
@@ -146,4 +145,30 @@ func _amqp(cfg *config.Config) (*amqp091.Channel, func(), error) {
 		channel.Close()
 		conn.Close()
 	}, nil
+}
+func amqp_setup_exchange(cfg *config.Config, channel *amqp091.Channel, exchange string, queues ...string) error {
+
+	log := slog.With(slog.String("exchange", exchange))
+	log.Info("declaring exchange")
+	if err := channel.ExchangeDeclare(exchange, "fanout", true, false, false, false, nil); err != nil {
+		slog.Error("failed to declare notifications queue", sl.Err(err))
+		return err
+	}
+
+	for _, queueName := range queues {
+		log.Info("declaring queue", slog.String("queue", queueName))
+		queue, err := channel.QueueDeclare(queueName, true, false, false, false, nil)
+		if err != nil {
+			log.Error("failed to declare queue", sl.Err(err), slog.String("queue", queueName))
+			return err
+		}
+
+		log.Info("binding queue", slog.String("queue", queueName))
+		if err := channel.QueueBind(queue.Name, cfg.Amqp.TelegramQueue, cfg.Amqp.SubscriptionExchange, false, nil); err != nil {
+			log.Error("failed to bind queue", sl.Err(err), slog.String("queue", queueName))
+			return err
+		}
+	}
+
+	return nil
 }

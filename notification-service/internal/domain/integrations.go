@@ -1,6 +1,13 @@
 package domain
 
-type SetIntegrationsRequest struct {
+type Integrations struct {
+	UserId           string
+	TelegramUsername *string
+	WannaMail        bool
+}
+
+type SetIntegrations struct {
+	UserId           string
 	TelegramUsername *string
 	WannaMail        *bool
 }

@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"mzhn/notification-service/internal/config"
+	"mzhn/notification-service/internal/services/authservice"
+	"mzhn/notification-service/internal/services/integrationservice"
 	"mzhn/notification-service/internal/transport/http/handlers"
+	"mzhn/notification-service/internal/transport/http/middleware"
 	"mzhn/notification-service/pkg/sl"
 	"strings"
 
@@ -20,16 +23,16 @@ type Server struct {
 	logger *slog.Logger
 
 	as *authservice.Service
-	es *eventservice.Service
+	is *integrationservice.Service
 }
 
-func New(cfg *config.Config, as *authservice.Service, es *eventservice.Service) *Server {
+func New(cfg *config.Config, as *authservice.Service, is *integrationservice.Service) *Server {
 	return &Server{
 		Echo:   echo.New(),
 		logger: slog.Default().With(sl.Module("http")),
 		cfg:    cfg,
 		as:     as,
-		es:     es,
+		is:     is,
 	}
 }
 
@@ -42,10 +45,10 @@ func (h *Server) setup() {
 		AllowCredentials: true,
 	}))
 
-	// tokguard := middleware.Token()
-	// authguard := middleware.RequireAuth(h.as, h.cfg)
+	tokguard := middleware.Token()
+	authguard := middleware.RequireAuth(h.as, h.cfg)
 
-	h.GET("/", handlers.Events(h.es) /*, tokguard(), authguard()*/)
+	h.PUT("/", handlers.UpdateIntegrations(h.is), tokguard(), authguard())
 }
 
 func (h *Server) Run(ctx context.Context) error {

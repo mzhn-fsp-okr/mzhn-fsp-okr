@@ -27,7 +27,7 @@ func New(cfg *config.Config, channel *amqp.Channel) *RabbitMQ {
 	}
 }
 
-func (r *RabbitMQ) Notification(ctx context.Context, event *domain.EventInfo) error {
+func (r *RabbitMQ) SendTelegram(ctx context.Context, event *domain.EventInfo) error {
 
 	eventJson, err := json.Marshal(event)
 	if err != nil {

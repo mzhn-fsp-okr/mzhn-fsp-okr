@@ -41,3 +41,20 @@ func (a *Api) Profile(ctx context.Context, token string) (*domain.User, error) {
 		Email: response.User.Email,
 	}, nil
 }
+
+func (a *Api) Find(ctx context.Context, slug string) (*domain.User, error) {
+	fn := "authapi.Find"
+	log := a.l.With(slog.String("fn", fn))
+
+	response, err := a.client.Find(ctx, &authpb.FindUserRequest{Slug: slug})
+	if err != nil {
+		log.Error("failed to find user", sl.Err(err), slog.String("slug", slug))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+	log.Debug("found user", slog.Any("response", response))
+
+	return &domain.User{
+		Id:    response.User.Id,
+		Email: response.User.Email,
+	}, nil
+}

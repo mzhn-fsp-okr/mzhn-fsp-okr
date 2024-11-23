@@ -38,3 +38,14 @@ type EventInfo struct {
 	Participants            int                       `json:"participants"`
 	ParticipantRequirements []ParticipantRequirements `json:"participantRequirements"`
 }
+
+type EventType int
+
+const (
+	NewEvent EventType = iota
+	UpcomingEvent
+)
+
+func (e EventType) String() string {
+	return [...]string{"new", "upcoming"}[e]
+}
