@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/fetch";
 import moment from "moment";
-import { SearchResponse } from "./events";
+import { SearchResponse, SportTypeAlt } from "./events";
 
 export async function eventSubscribe(id: string) {
   return await apiFetch(
@@ -67,11 +67,11 @@ export async function sportUnsubscribe(id: string) {
 }
 
 export async function sports() {
-  const result = await apiFetch<SearchResponse>(
-    "/subscriptions/sport/", // ????????????????
+  const result = await apiFetch<{ sports: SportTypeAlt[] }>(
+    "/subscriptions/sport/",
     undefined,
     {},
     process.env.NEXT_PUBLIC_API_URL
   );
-  return result.events;
+  return result.sports;
 }

@@ -2,6 +2,7 @@ import { Title, TitleProvider } from "@/components/providers/title";
 import DashboardSidebar from "@/components/sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import CurrentTime from "@/components/util/current-time";
+import AiDialog from "./components/ai-dialog";
 
 export default function Layout({
   children,
@@ -18,9 +19,10 @@ export default function Layout({
               <SidebarTrigger />
             </div>
             <Title className="text-sm" />
-            <CurrentTime className="text-muted-foreground ml-auto hidden text-sm sm:block" />
+            <CurrentTime className="ml-auto hidden text-sm text-muted-foreground sm:block" />
           </div>
           <div className="p-4">{children}</div>
+          <AiDialog />
         </main>
       </SidebarProvider>
     </TitleProvider>

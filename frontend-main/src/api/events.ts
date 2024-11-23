@@ -104,3 +104,10 @@ export async function sports() {
 
   return result;
 }
+
+export async function sportsSearch(name: string) {
+  const result = await apiFetch<{ sportTypes: SportTypeAlt[] }>(
+    `api/events/sports/?name=${name}`
+  );
+  return result;
+}
