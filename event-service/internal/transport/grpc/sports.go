@@ -4,9 +4,11 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"mzhn/event-service/internal/storage/model"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
 
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -42,13 +44,15 @@ func (s *Server) Sports(stream espb.EventService_SportsServer) error {
 		}
 
 		response := &espb.SportResponse{
-			SportSubType: &espb.SportSubtype{
-				Id:   sp.Id,
-				Name: sp.Name,
-				Parent: &espb.SportType{
-					Id:   sp.SportType.Id,
-					Name: sp.SportType.Name,
-				},
+			SportType: &espb.SportTypeWithSubtypes{
+				Id:   sp.SportType.Id,
+				Name: sp.SportType.Name,
+				Subtypes: lo.Map(sp.Subtypes, func(sst model.Subtype, _ int) *espb.SportSubtype2 {
+					return &espb.SportSubtype2{
+						Id:   sst.Id,
+						Name: sst.Name,
+					}
+				}),
 			},
 		}
 

@@ -35,6 +35,18 @@ message SportSubtype {
   SportType parent = 3;
 }
 
+message SportTypeWithSubtypes {
+  string id = 1;
+  string name = 2;
+  repeated SportSubtype2 subtypes = 3;
+}
+
+message SportSubtype2 {
+  string id = 1;
+  string name = 2;
+}
+
+
 message EventInfo {
   string ekpId = 1;
   SportSubtype sportSubtype = 3;
@@ -81,5 +93,5 @@ message SportRequest {
 }
 
 message SportResponse {
-  SportSubtype sportSubType = 1;
+  SportTypeWithSubtypes sportType = 1;
 }
