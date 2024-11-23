@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "parser"
+version = "0.1.0"
+description = ""
+authors = ["Maxim Slipenko <no-reply@maxim.slipenko.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+# PDF processing
+pypdf2 = "^3.0.1"
+camelot-py = { extras = ["cv"], version = "^0.11.0" }
+
+# https://github.com/vinayak-mehta/pdftopng/issues/11#issuecomment-1528971792
+pdftopng = [
+   {markers="sys_platform == 'linux' and platform_machine == 'x86_64'", path='vendored/pdftopng-0.2.3-cp311-cp311-linux_x86_64.whl'},
+]
+
+grpcio = "^1.68.0"
+grpcio-tools = "^1.68.0"
+
+selenium = "^4.26.1"
+webdriver-manager = "^4.0.2"
+
+schedule = "^1.2.2"
+requests = "^2.32.3"
+certifi = "^2024.8.30"
+pip-system-certs = "^4.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.dev-dependencies]
+black = "^24.10.0"
+matplotlib = "^3.9.2"
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

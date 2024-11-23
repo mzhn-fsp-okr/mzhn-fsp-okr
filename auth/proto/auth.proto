@@ -1,0 +1,48 @@
+syntax="proto3";
+
+package auth;
+
+option go_package="mzhn/proto/auth;authpb";
+
+service Auth {
+  rpc Find(FindUserRequest) returns (FindUserResponse);
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc Profile(ProfileRequest) returns (ProfileResponse);
+}
+
+enum Role {
+  ADMIN = 0;
+  REGULAR = 1;
+}
+
+message UserInfo {
+  string id = 1;
+  string email = 2;
+  repeated Role roles = 3;
+  string registeredAt = 4;
+}
+
+message FindUserRequest {
+  string slug = 1;
+}
+
+message FindUserResponse {
+  UserInfo user = 1;
+}
+
+// Authenticate
+message AuthenticateRequest {
+  string accessToken = 1;
+  repeated Role roles = 2;
+}
+message AuthenticateResponse {
+  bool approved = 1;
+}
+
+// Profile
+message ProfileRequest {
+  string accessToken = 1;
+}
+message ProfileResponse {
+  UserInfo user = 1;
+}
