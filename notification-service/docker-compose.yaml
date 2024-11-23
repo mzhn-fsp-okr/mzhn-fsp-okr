@@ -1,0 +1,33 @@
+services:
+  notification-service:
+    container_name: mzhn-event-service
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      WAIT_HOSTS: pg-ns:5432
+      PG_HOST: pg-ns
+      PG_PORT: 5432
+      # ENV: local
+    depends_on:
+      - pg-ns
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${GRPC_PORT}:${GRPC_PORT}"
+
+  pg-ns:
+    image: postgres:14.13-alpine3.20
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_NAME}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASS}
+    volumes:
+      - pg-ns-data:/var/lib/postgresql/data
+    ports:
+      - 5435:5432
+
+volumes:
+  pg-ns-data:
+    name: mzhn-ns-pg
