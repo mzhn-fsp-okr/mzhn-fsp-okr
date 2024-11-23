@@ -49,9 +49,11 @@ export default function PageHeader({ className, ...props }: PageHeaderProps) {
         </NavigationMenuList>
       </NavigationMenu>
       <div>
-        <Button variant="ghost">
-          <User />
-          <span className="hidden sm:inline">Войти</span>
+        <Button variant="ghost" asChild>
+          <Link href={process.env.NEXT_PUBLIC_CABINET_URL!} target="_blank">
+            <User />
+            <span className="hidden sm:inline">Войти</span>
+          </Link>
         </Button>
       </div>
     </header>
