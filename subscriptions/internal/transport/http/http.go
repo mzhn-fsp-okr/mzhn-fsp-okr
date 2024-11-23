@@ -48,6 +48,7 @@ func (h *Server) setup() {
 	tokguard := middleware.Token()
 	authguard := middleware.RequireAuth(h.as, h.cfg)
 	sport := h.Group("/sport", tokguard(), authguard())
+	sport.GET("/", handlers.GetUserSports(h.ss))
 	sport.POST("/subscribe", handlers.SubscribeToSport(h.ss))
 	sport.POST("/unsubscribe", handlers.UnsubscribeFromSport(h.ss))
 

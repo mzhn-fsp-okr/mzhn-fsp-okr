@@ -144,6 +144,89 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 	}
 }
 
+func (s *Service) GetUserSports(userId string) ([]*espb.SportTypeWithSubtypes, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUserEvents"))
+	log.Debug("get user events", slog.Any("userId", userId))
+
+	sportIds, err := s.storage.GetUserSportsId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sportIds) == 0 {
+		return []*espb.SportTypeWithSubtypes{}, nil
+	}
+
+	stream, err := s.es.Sports(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer stream.CloseSend()
+
+	// Канал для сбора результатов
+	sportsChan := make(chan *espb.SportTypeWithSubtypes)
+	// Канал для ошибок
+	errChan := make(chan error, 1)
+	// Канал для сигнализации о завершении отправки
+	sendDone := make(chan struct{})
+
+	// Горутина для отправки запросов
+	go func() {
+		for _, sportId := range sportIds {
+			if err := stream.Send(&espb.SportRequest{
+				Id: sportId,
+			}); err != nil {
+				s.l.Error("cannot send while get user sports", slog.Any("error", err))
+				errChan <- err
+				return
+			}
+		}
+		if err := stream.CloseSend(); err != nil {
+			s.l.Error("cannot close send while get user events", slog.Any("error", err))
+			errChan <- err
+			return
+		}
+		close(sendDone)
+	}()
+
+	// Горутина для получения ответов
+	go func() {
+		for {
+			sportInfo, err := stream.Recv()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					// Нормальное завершение стрима
+					close(sportsChan)
+					return
+				}
+				if grpcErr, ok := status.FromError(err); ok {
+					if grpcErr.Code() == codes.NotFound {
+						// Пропускаем не найденные события
+						continue
+					}
+				}
+				errChan <- err
+				return
+			}
+
+			sportsChan <- sportInfo.SportType
+		}
+	}()
+
+	var sports []*espb.SportTypeWithSubtypes
+	for {
+		select {
+		case err := <-errChan:
+			return nil, err
+		case sport, ok := <-sportsChan:
+			if !ok {
+				return sports, nil
+			}
+			sports = append(sports, sport)
+		}
+	}
+}
+
 func (s *Service) GetUsersSubscribedToEvent(eventId string) ([]string, error) {
 	log := s.l.With(sl.Method("SubscriptionsService.GetUsersSubscribedToEvent"))
 

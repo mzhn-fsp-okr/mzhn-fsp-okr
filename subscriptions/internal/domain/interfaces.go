@@ -11,6 +11,7 @@ type SubscriptionsStorage interface {
 	DeleteSport(sportSubscription *SportSubscription) error
 	DeleteEvent(eventSubscription *EventSubscription) error
 	GetUserEventsId(userId string) ([]string, error)
+	GetUserSportsId(userId string) ([]string, error)
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
 	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
@@ -23,6 +24,7 @@ type SubscriptionsService interface {
 	UnsubscribeFromSport(dto *SportSubscription) error
 	UnsubscribeFromEvent(dto *EventSubscription) error
 	GetUserEvents(userId string) ([]*espb.EventInfo, error)
+	GetUserSports(userId string) ([]*espb.SportTypeWithSubtypes, error)
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
 	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
