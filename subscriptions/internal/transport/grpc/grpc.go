@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var _ sspb.SubscriptionServiceServer = (*Server)(nil)
@@ -22,8 +23,7 @@ type Server struct {
 	cfg *config.Config
 	l   *slog.Logger
 	ss  domain.SubscriptionsService
-
-	*sspb.UnimplementedSubscriptionServiceServer
+	sspb.UnimplementedSubscriptionServiceServer
 }
 
 func New(cfg *config.Config, ss domain.SubscriptionsService) *Server {
@@ -47,7 +47,7 @@ func (s *Server) Run(ctx context.Context) error {
 		reflection.Register(server)
 	}
 
-	// sspb.RegisterSubscriptionServiceServer(server, s)
+	sspb.RegisterSubscriptionServiceServer(server, s)
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -98,4 +98,30 @@ func (s *Server) GetUsersSubscribedToSport(req *sspb.SubscriptionRequest, stream
 	}
 
 	return nil
+}
+
+// GetUsersFromEventByDaysLeft implements sspb.SubscriptionServiceServer.
+func (s *Server) GetUsersFromEventByDaysLeft(req *sspb.UsersEventByDaysRequest, stream grpc.ServerStreamingServer[sspb.UsersEventByDaysResponse]) error {
+	userIds, err := s.ss.GetUsersFromEventByDaysLeft(req.EventId, req.DaysLeft)
+	if err != nil {
+		return err
+	}
+
+	for _, userId := range userIds {
+		if err := stream.Send(&sspb.UsersEventByDaysResponse{UserId: userId}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+// NotifyUser implements sspb.SubscriptionServiceServer.
+func (s *Server) NotifyUser(ctx context.Context, req *sspb.NotifyUserRequest) (*emptypb.Empty, error) {
+	if err := s.ss.NotifyUser(req.UserId, req.DaysLeft); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

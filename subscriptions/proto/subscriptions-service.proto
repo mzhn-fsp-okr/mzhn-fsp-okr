@@ -1,6 +1,7 @@
 syntax="proto3";
 
 package subscriptions;
+import "google/protobuf/empty.proto";
 
 option go_package="mzhn/proto/subscriptions-service;sspb";
 
@@ -14,6 +15,7 @@ service SubscriptionService {
     rpc GetUsersSubscribedToSport(SubscriptionRequest) returns (stream SubscriptionResponse);
     rpc GetUsersSubscribedToEvent(SubscriptionRequest) returns (stream SubscriptionResponse);
     rpc GetUsersFromEventByDaysLeft(UsersEventByDaysRequest) returns (stream UsersEventByDaysResponse);
+    rpc NotifyUser(NotifyUserRequest) returns (google.protobuf.Empty);
 }
 
 message SubscriptionRequest {
@@ -31,4 +33,9 @@ message UsersEventByDaysRequest {
 
 message UsersEventByDaysResponse {
     string userId = 1;
+}
+
+message NotifyUserRequest {
+    string userId = 1;
+    DaysLeft daysLeft = 2;
 }

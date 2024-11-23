@@ -1,6 +1,9 @@
 package domain
 
-import "mzhn/subscriptions-service/pb/espb"
+import (
+	"mzhn/subscriptions-service/pb/espb"
+	"mzhn/subscriptions-service/pb/sspb"
+)
 
 type SubscriptionsStorage interface {
 	CreateSport(dto *SportSubscription) (*SportSubscription, error)
@@ -10,6 +13,8 @@ type SubscriptionsStorage interface {
 	GetUserEventsId(userId string) ([]string, error)
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
+	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
+	NotifyUser(userId string, daysLeft sspb.DaysLeft) error
 }
 
 type SubscriptionsService interface {
@@ -20,4 +25,6 @@ type SubscriptionsService interface {
 	GetUserEvents(userId string) ([]*espb.EventInfo, error)
 	GetUsersSubscribedToEvent(eventId string) ([]string, error)
 	GetUsersSubscribedToSport(sportId string) ([]string, error)
+	GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error)
+	NotifyUser(userId string, daysLeft sspb.DaysLeft) error
 }

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"mzhn/subscriptions-service/internal/domain"
 	"mzhn/subscriptions-service/pb/espb"
+	"mzhn/subscriptions-service/pb/sspb"
 	"mzhn/subscriptions-service/pkg/sl"
 
 	"google.golang.org/grpc/codes"
@@ -155,4 +156,18 @@ func (s *Service) GetUsersSubscribedToSport(sportId string) ([]string, error) {
 
 	log.Debug("get users subscribed to sport", slog.Any("sportId", sportId))
 	return s.storage.GetUsersSubscribedToSport(sportId)
+}
+
+func (s *Service) GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersFromEventByDaysLeft"))
+
+	log.Debug("get users from event by days left", slog.Any("eventId", eventId))
+	return s.storage.GetUsersFromEventByDaysLeft(eventId, daysLeft)
+}
+
+func (s *Service) NotifyUser(userId string, daysLeft sspb.DaysLeft) error {
+	log := s.l.With(sl.Method("SubscriptionsService.NotifyUser"))
+
+	log.Debug("notify user", slog.Any("userId", userId), slog.Any("daysLeft", daysLeft.String()))
+	return s.storage.NotifyUser(userId, daysLeft)
 }
