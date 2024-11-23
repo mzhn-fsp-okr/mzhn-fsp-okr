@@ -4,6 +4,7 @@ include:
   - rmq.yaml
   - subscriptions.yaml
   # - parser.yaml
+  # - ai-search.yaml
   - notification-service.yaml
 
 services:
