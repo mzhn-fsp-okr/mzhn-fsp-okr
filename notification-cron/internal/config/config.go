@@ -26,7 +26,7 @@ func (as *AuthService) ConnectionString() string {
 }
 
 type Cron struct {
-	Minutes int `env:"INTERVAL" env-default:"20"` // in minutes
+	Minutes int `env:"INTERVAL" env-default:"1"` // in minutes
 }
 
 type Amqp struct {

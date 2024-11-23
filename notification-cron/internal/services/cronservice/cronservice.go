@@ -10,7 +10,6 @@ import (
 	"mzhn/notification-cron/pb/espb"
 	"mzhn/notification-cron/pb/sspb"
 	"mzhn/notification-cron/pkg/sl"
-	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -35,19 +34,16 @@ func New(cfg *config.Config, sspb sspb.SubscriptionServiceClient, espb espb.Even
 	}
 }
 
-func (s *Service) NotifyUsers(ctx context.Context, daysLeft uint32) error {
-	if daysLeft > 30 {
-		s.l.Debug("days left more than 30")
-		return nil
-	}
-
+func (s *Service) NotifyUsers(ctx context.Context) error {
+	s.l.Debug("NotifyUsers")
 	// Канал для сбора результатов
 	eventsChan := make(chan *espb.UpcomingEventResponse)
 	// Канал для ошибок
 	errChan := make(chan error, 1)
 
-	stream, err := s.espb.GetUpcomingEvents(ctx, &emptypb.Empty{})
+	stream, err := s.espb.GetUpcomingEvents(context.Background(), &emptypb.Empty{})
 	if err != nil {
+		s.l.Error("cannot get upcoming events", sl.Err(err))
 		return err
 	}
 
@@ -60,6 +56,7 @@ func (s *Service) NotifyUsers(ctx context.Context, daysLeft uint32) error {
 					return
 				}
 
+				s.l.Error("Error whiel Recv()", slog.Any("error", err))
 				errChan <- err
 				return
 			}
@@ -84,12 +81,6 @@ func (s *Service) NotifyUsers(ctx context.Context, daysLeft uint32) error {
 }
 
 func (s *Service) proccessEvent(event *espb.UpcomingEventResponse) error {
-	s.l.Debug("start proccessing event", slog.Any("eventId", event.Event.Id))
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	go func() {
-		<-ctx.Done()
-		s.l.Debug("Timeout reached", slog.Any("eventId", event.Event.Id))
-	}()
 	var daysLeft sspb.DaysLeft
 
 	if event.DaysLeft <= 30 && event.DaysLeft > 7 {
@@ -100,16 +91,20 @@ func (s *Service) proccessEvent(event *espb.UpcomingEventResponse) error {
 		daysLeft = sspb.DaysLeft_ThreeDays
 	}
 
-	userIds, err := s.getUsersToNotify(ctx, &sspb.UsersEventByDaysRequest{
+	userIds, err := s.getUsersToNotify(context.Background(), &sspb.UsersEventByDaysRequest{
 		EventId:  event.Event.Id,
 		DaysLeft: daysLeft,
 	})
 	if err != nil {
+		s.l.Error("cannot get users to notify", sl.Err(err))
 		return err
+	}
+	if len(userIds) != 0 {
+		s.l.Debug("users to notify length", slog.Any("count", len(userIds)))
 	}
 
 	for _, userId := range userIds {
-		go s.pub.NotifyAboutUpcomingEvent(ctx, userId, event.Event.Id, event.DaysLeft)
+		go s.pub.NotifyAboutUpcomingEvent(context.Background(), userId, event.Event.Id, event.DaysLeft, daysLeft)
 	}
 
 	return nil

@@ -49,11 +49,6 @@ func (h *CronHandler) Run(ctx context.Context) error {
 }
 
 func (h *CronHandler) setup(ctx context.Context) {
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 30))
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 7))
-	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx, 3))
-
-	for _, daysLeft := range []int{30, 7, 3} {
-		go h.cs.NotifyUsers(ctx, uint32(daysLeft))
-	}
+	h.tasks = append(h.tasks, gocron.NewTask(h.cs.NotifyUsers, ctx))
+	h.cs.NotifyUsers(ctx)
 }

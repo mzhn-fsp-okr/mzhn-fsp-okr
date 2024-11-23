@@ -42,7 +42,7 @@ func New() (*App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	rabbitMQ := amqp.New(configConfig, channel)
+	rabbitMQ := amqp.New(configConfig, channel, subscriptionServiceClient)
 	service := cronservice.New(configConfig, subscriptionServiceClient, eventServiceClient, rabbitMQ)
 	v := _servers(configConfig, service)
 	app := newApp(configConfig, v)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"mzhn/notification-cron/internal/config"
+	"mzhn/notification-cron/pb/sspb"
 	"mzhn/notification-cron/pkg/sl"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -13,19 +14,22 @@ import (
 type RabbitMQ struct {
 	cfg     *config.Config
 	l       *slog.Logger
+	ss      sspb.SubscriptionServiceClient
 	channel *amqp091.Channel
 }
 
-func New(cfg *config.Config, channel *amqp091.Channel) *RabbitMQ {
+func New(cfg *config.Config, channel *amqp091.Channel, ss sspb.SubscriptionServiceClient) *RabbitMQ {
 
 	return &RabbitMQ{
 		cfg:     cfg,
 		channel: channel,
+		ss:      ss,
 		l:       slog.With(sl.Module("rabbitmq")),
 	}
 }
 
-func (r *RabbitMQ) NotifyAboutUpcomingEvent(ctx context.Context, userId string, eventId string, daysLeft uint32) error {
+func (r *RabbitMQ) NotifyAboutUpcomingEvent(ctx context.Context, userId string, eventId string, daysLeft uint32, daysLeftEnum sspb.DaysLeft) error {
+	r.l.Debug("publish new event to queue")
 	payload := map[string]interface{}{
 		"userId":   userId,
 		"eventId":  eventId,
@@ -34,6 +38,7 @@ func (r *RabbitMQ) NotifyAboutUpcomingEvent(ctx context.Context, userId string, 
 
 	payloadJson, err := json.Marshal(&payload)
 	if err != nil {
+		r.l.Error("Error while marshaling", sl.Err(err))
 		return err
 	}
 
@@ -42,8 +47,10 @@ func (r *RabbitMQ) NotifyAboutUpcomingEvent(ctx context.Context, userId string, 
 		ContentType: "application/json",
 		Body:        payloadJson,
 	}); err != nil {
+		r.l.Error("Error while send event", sl.Err(err))
 		return err
 	}
 
+	r.ss.NotifyUser(ctx, &sspb.NotifyUserRequest{UserId: userId, DaysLeft: daysLeftEnum})
 	return nil
 }
