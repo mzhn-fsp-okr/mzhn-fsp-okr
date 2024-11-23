@@ -28,7 +28,15 @@ export async function events() {
     {},
     process.env.NEXT_PUBLIC_API_URL
   );
-  return result.events;
+
+  return result.events.map((e) => ({
+    ...e,
+    sportSubtype: {
+      ...e.sportSubtype,
+      // @ts-expect-error ---
+      sportType: e.sportSubtype.parent,
+    },
+  }));
 }
 
 export async function sportSubscribe(id: string) {

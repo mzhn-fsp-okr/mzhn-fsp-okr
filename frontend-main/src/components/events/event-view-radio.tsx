@@ -46,12 +46,6 @@ export default function EventViewRadio({
       >
         календарь
       </ToggleGroupItem>
-      <ToggleGroupItem
-        value="map"
-        className="hover:underline aria-checked:text-blue-500"
-      >
-        карта
-      </ToggleGroupItem>
     </ToggleGroup>
   );
 }
