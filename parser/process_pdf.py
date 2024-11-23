@@ -26,6 +26,7 @@ PEOPLE_DESCRIPTION_KEYWORDS = [
     "мальчики",
 ]
 
+
 def extract_gender_age(
     description: str,
 ) -> List[Dict[str, Optional[List[Optional[int]]]]]:
@@ -94,11 +95,12 @@ def extract_gender_age(
         for age in unique_ages
     ]
 
+
 def post_process(event: SportEvent):
     event.name = event.name.strip()
     event.description = event.description.strip()
     event.location = event.location.strip()
-    
+
     # Инициализация переменной для хранения имени
     start_index = -1
 
@@ -117,22 +119,22 @@ def post_process(event: SportEvent):
         logging.debug(f"Название события извлечено и перенесено в 'name': {event.name}")
     else:
         # Если не найдено подходящего текста
-        logging.debug("Не найдено подходящего текста для названия, описание остается без изменений.")
-    
+        logging.debug(
+            "Не найдено подходящего текста для названия, описание остается без изменений."
+        )
+
     event.gender_age_info = extract_gender_age(event.description)
 
 
 def process_page_range(file_path, page_range: str) -> List[SportEvent]:
     logging.debug(f"Начало обработки диапазона страниц: {page_range}")
     tables = camelot.read_pdf(
-        file_path, 
-        flavor="stream", 
-        pages=page_range, 
-        row_tol=5,       
+        file_path,
+        flavor="stream",
+        pages=page_range,
+        row_tol=5,
         edge_tol=100,
-        columns=[
-            "107,340,467,725"
-        ]
+        columns=["107,340,467,725"],
     )
     logging.debug(f"Извлечено таблиц: {len(tables)} в диапазоне {page_range}")
 
@@ -188,7 +190,7 @@ def process_page_range(file_path, page_range: str) -> List[SportEvent]:
                     if not current_event.dates.from_:
                         current_event.dates.from_ = col3
                     elif not current_event.dates.to:
-                        current_event.dates.to = col3                    
+                        current_event.dates.to = col3
 
                 if col4:
                     current_event.location += col4 + " "
@@ -203,7 +205,7 @@ def process_page_range(file_path, page_range: str) -> List[SportEvent]:
                         )
 
     # Очистка строковых полей
-    for event in events:        
+    for event in events:
         post_process(event)
 
     logging.debug(
@@ -290,12 +292,12 @@ def process_pdf():
         link = ""
 
         # Проверяем, изменилась ли дата обновления
-        if not FORCE_DOWNLOAD and cache.get("update_date") == update_date and os.path.exists(
-            cache.get("file_path", "")
+        if (
+            not FORCE_DOWNLOAD
+            and cache.get("update_date") == update_date
+            and os.path.exists(cache.get("file_path", ""))
         ):
-            logging.info(
-                "PDF не изменился с последнего скачивания."
-            )
+            logging.info("PDF не изменился с последнего скачивания.")
             file_path = cache["file_path"]
 
             if not FORCE_PARSE:
@@ -353,9 +355,9 @@ def process_pdf():
 
         # Преобразование событий в словари для JSON
         events_dict = [sport_event_to_dict(event) for event in all_events]
-    
+
         # Сохранение в JSON файл
-        with open('results.json', 'w', encoding='utf-8') as json_file:
+        with open("results.json", "w", encoding="utf-8") as json_file:
             json.dump(events_dict, json_file, ensure_ascii=False, indent=4)
 
         # Отправляем события через gRPC
@@ -363,4 +365,3 @@ def process_pdf():
         logging.info(f"Всего отправлено событий: {len(all_events)}")
     except Exception as e:
         logging.error(f"Общая ошибка в процессе обработки PDF: {e}")
-
