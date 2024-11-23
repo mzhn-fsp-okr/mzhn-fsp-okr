@@ -28,7 +28,7 @@ export default function Profile({ user, ...props }: ProfileProps) {
         </div>
         <div className="w-full space-y-2 py-4">
           <Button className="w-full" asChild>
-            <Link href="/profile">В личный кабинет</Link>
+            <a href="/profile">В личный кабинет</a>
           </Button>
           <Button className="w-full" variant="secondary" asChild>
             <Link href="/sign-out" prefetch={false}>
