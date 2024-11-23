@@ -121,7 +121,7 @@ func _amqp(cfg *config.Config) (*amqp091.Channel, func(), error) {
 		}, err
 	}
 	slog.Info("declaring notifications exchange", slog.String("exchange", cfg.Amqp.NotificationsExchange))
-	if err := channel.ExchangeDeclare(cfg.Amqp.NotificationsExchange, "fanout", true, false, false, false, nil); err != nil {
+	if err := channel.ExchangeDeclare(cfg.Amqp.NotificationsExchange, "direct", true, false, false, false, nil); err != nil {
 		slog.Error("failed to declare notifications queue", sl.Err(err))
 		return nil, func() {
 			channel.Close()

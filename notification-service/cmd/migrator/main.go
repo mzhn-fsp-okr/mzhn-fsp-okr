@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	local bool
+	local bool = false
 )
 
 func init() {

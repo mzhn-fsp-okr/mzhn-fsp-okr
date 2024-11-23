@@ -3,18 +3,27 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 
 	"mzhn/notification-service/internal/app"
 
 	"github.com/joho/godotenv"
 )
 
+var (
+	local bool = false
+)
+
+func init() {
+	flag.BoolVar(&local, "local", false, "run in local mode")
+}
+
 func main() {
 	flag.Parse()
 
-	if err := godotenv.Load(); err != nil {
-		panic(fmt.Errorf("cannot load env: %w", err))
+	if local {
+		if err := godotenv.Load(); err != nil {
+			panic("cannot load .env")
+		}
 	}
 
 	ctx := context.Background()
