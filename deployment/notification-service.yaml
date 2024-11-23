@@ -26,7 +26,7 @@ services:
       SUBSCRIPTION_SERVICE_HOST: subscriptions-service
       SUBSCRIPTION_SERVICE_PORT: 7000
 
-      EVENT_SERVICE_HOST: events-service
+      EVENT_SERVICE_HOST: event-service
       EVENT_SERVICE_PORT: 7000
 
       AMQP_HOST: rmq

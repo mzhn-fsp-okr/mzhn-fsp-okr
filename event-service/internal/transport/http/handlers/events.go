@@ -47,7 +47,9 @@ func Events(es *eventservice.Service) echo.HandlerFunc {
 
 		slog.Info("list events", slog.Any("filters", req))
 
-		filters := model.EventsFilters{}
+		filters := model.EventsFilters{
+			Pagination: new(model.Pagination),
+		}
 
 		if req.PageSize != nil {
 			page := uint64(*req.PageSize)

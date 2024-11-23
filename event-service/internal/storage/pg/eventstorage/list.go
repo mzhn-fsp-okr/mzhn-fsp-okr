@@ -64,10 +64,10 @@ func (s *Storage) applyListFilters(qb sq.SelectBuilder, filters model.EventsFilt
 	return qb
 }
 
-func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
+func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters ...model.EventsFilters) error {
 
 	fn := "EventStorage.List"
-	log := s.l.With(sl.Method(fn), slog.Any("filters", filters))
+	log := s.l.With(sl.Method(fn))
 
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
@@ -86,8 +86,14 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 		InnerJoin(fmt.Sprintf("%s ed on ed.event_id = e.id", pg.EVENT_DATES)).
 		OrderBy("ed.date_from ASC").
 		PlaceholderFormat(sq.Dollar)
-	qb = s.applyListFilters(qb, filters)
-	qb = s.applyListPagination(qb, filters.Pagination)
+
+	if len(filters) != 0 {
+		f := filters[0]
+		qb = s.applyListFilters(qb, f)
+		if f.Pagination != nil {
+			qb = s.applyListPagination(qb, *f.Pagination)
+		}
+	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
@@ -105,6 +111,7 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 
 	for rows.Next() {
 		var e domain.EventInfo
+		log.Debug("scan row")
 		if err := rows.Scan(
 			&e.Id,
 			&e.EkpId,
@@ -123,7 +130,8 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 			return fmt.Errorf("%s: %w", fn, err)
 		}
 
-		rr, err := s.listRequirementsFor(ctx, e.Id, filters)
+		log.Debug("listing requirements for event")
+		rr, err := s.listRequirementsFor(ctx, e.Id, filters...)
 		if err != nil {
 			log.Error("failed to list requirements for event", sl.Err(err))
 			return fmt.Errorf("%s: %w", fn, err)
@@ -131,6 +139,7 @@ func (s *Storage) List(ctx context.Context, chEvents chan<- domain.EventInfo, fi
 
 		e.ParticipantRequirements = rr
 
+		log.Debug("sending event to channel")
 		chEvents <- e
 	}
 
