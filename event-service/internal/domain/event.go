@@ -26,11 +26,21 @@ type EventLoadInfo struct {
 	ParticipantRequirements []ParticipantRequirements
 }
 
+type SportType struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SportSubtype struct {
+	Id     string    `json:"id"`
+	Name   string    `json:"name"`
+	Parent SportType `json:"sportType"`
+}
+
 type EventInfo struct {
 	Id                      string                    `json:"id"`
 	EkpId                   string                    `json:"ekpId"`
-	SportType               string                    `json:"sportType"`
-	SportSubtype            string                    `json:"sportSubtype"`
+	SportSubtype            SportSubtype              `json:"sportSubtype"`
 	Name                    string                    `json:"name"`
 	Description             string                    `json:"description"`
 	Dates                   DateRange                 `json:"dates"`
