@@ -1,6 +1,8 @@
 import amqp from "amqplib";
 import { get } from "../bot";
 
+import { formatMessage } from "./format_event";
+
 type Message = {
   receiver: string;
   event: Event;
@@ -41,11 +43,11 @@ export const setupAmqp = async (env: NodeJS.ProcessEnv) => {
       const bot = get();
       try {
         console.log("sending message", body.receiver);
-        await bot.telegram.sendMessage(body.receiver, text);
+        await bot.telegram.sendMessage(body.receiver, formatMessage(body.event), { parse_mode: "Markdown" });
       } catch (error) {
         console.error("error while sending message", error);
       }
     },
-    { noAck: false }
+    { noAck: true }
   );
 };
