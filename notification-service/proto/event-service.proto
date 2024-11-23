@@ -1,12 +1,15 @@
 syntax="proto3";
 
 package events;
+import "google/protobuf/empty.proto";
 
 option go_package="mzhn/proto/event-service;espb";
 
 service EventService {
   rpc Load(stream LoadRequest) returns (LoadResponse);
+  rpc Event(EventRequest) returns (EventResponse);
   rpc Events(stream EventRequest) returns (stream EventResponse);
+  rpc GetUpcomingEvents(google.protobuf.Empty) returns (stream UpcomingEventResponse);
 }
 
 message DateRange {
@@ -20,10 +23,20 @@ message ParticipantRequirements {
   optional int32 max_age = 3;
 }
 
+message SportType {
+  string id = 1;
+  string name = 2;
+}
+
+message SportSubtype {
+  string id = 1;
+  string name = 2;
+  SportSubtype parent = 3;
+}
+
 message EventInfo {
   string ekpId = 1;
-  string sportType = 2;
-  string sportSubtype = 3;
+  SportSubtype sportSubtype = 3;
   string name = 4;
   string description = 5;
   DateRange dates = 6;
@@ -55,4 +68,9 @@ message EventRequest {
 
 message EventResponse {
   EventInfo info = 1;
+}
+
+message UpcomingEventResponse {
+  EventInfo event = 1;  
+  uint32 daysLeft = 2; // Кол-во дней до эвента
 }

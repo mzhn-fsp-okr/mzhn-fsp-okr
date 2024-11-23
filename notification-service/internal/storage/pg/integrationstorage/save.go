@@ -11,6 +11,10 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
+func (s *Storage) Create(ctx context.Context, userId string) error {
+	return s.save(ctx, &domain.SetIntegrations{UserId: userId})
+}
+
 func (s *Storage) Save(ctx context.Context, in *domain.SetIntegrations) error {
 	fn := "integrationstorage.Save"
 	log := s.l.With(sl.Method(fn))
@@ -48,10 +52,18 @@ func (s *Storage) save(ctx context.Context, in *domain.SetIntegrations) error {
 	}
 	defer c.Release()
 
+	values := make([]interface{}, 3)
+	values[0] = in.UserId
+	values[1] = in.TelegramUsername
+	values[2] = true
+	if in.WannaMail != nil {
+		values[2] = *in.WannaMail
+	}
+
 	qb := sq.
 		Insert(pg.INTEGRATIONS).
 		Columns("user_id", "telegram_username", "wanna_mail").
-		Values(in.UserId, in.TelegramUsername, in.WannaMail).
+		Values(values...).
 		PlaceholderFormat(sq.Dollar)
 
 	sql, args, err := qb.ToSql()

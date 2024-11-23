@@ -13,24 +13,27 @@ type DateRange struct {
 	To   time.Time `json:"to"`
 }
 
-type EventLoadInfo struct {
-	EkpId        string
-	SportType    string
-	SportSubtype string
-	Name         string
-	Description  string
-	Dates        DateRange
-	Location     string
-	Participants int
+type UpcomingEventMessage struct {
+	UserId   string `json:"userId"`
+	EventId  string `json:"eventId"`
+	DaysLeft uint32 `json:"daysLeft"`
+}
 
-	ParticipantRequirements []ParticipantRequirements
+type SportType struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SportSubtype struct {
+	Id     string    `json:"id"`
+	Name   string    `json:"name"`
+	Parent SportType `json:"sportType"`
 }
 
 type EventInfo struct {
 	Id                      string                    `json:"id"`
 	EkpId                   string                    `json:"ekpId"`
-	SportType               string                    `json:"sportType"`
-	SportSubtype            string                    `json:"sportSubtype"`
+	SportSubtype            SportSubtype              `json:"sportSubtype"`
 	Name                    string                    `json:"name"`
 	Description             string                    `json:"description"`
 	Dates                   DateRange                 `json:"dates"`
@@ -42,8 +45,8 @@ type EventInfo struct {
 type EventType int
 
 const (
-	NewEvent EventType = iota
-	UpcomingEvent
+	EventTypeNew EventType = iota
+	EventTypeUpcoming
 )
 
 func (e EventType) String() string {

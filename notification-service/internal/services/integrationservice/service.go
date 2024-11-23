@@ -10,21 +10,53 @@ import (
 )
 
 type IntegrationsSaver interface {
+	Create(ctx context.Context, userId string) error
 	Save(context.Context, *domain.SetIntegrations) error
+}
+type IntegrationsProvider interface {
+	Find(ctx context.Context, userId string) (*domain.Integrations, error)
 }
 
 type Service struct {
 	l   *slog.Logger
 	cfg *config.Config
 	is  IntegrationsSaver
+	ip  IntegrationsProvider
 }
 
-func New(cfg *config.Config, is IntegrationsSaver) *Service {
+func New(cfg *config.Config, is IntegrationsSaver, ip IntegrationsProvider) *Service {
 	return &Service{
 		l:   slog.With(sl.Module("integration-service")),
 		cfg: cfg,
 		is:  is,
+		ip:  ip,
 	}
+}
+
+func (s *Service) Find(ctx context.Context, userId string) (*domain.Integrations, error) {
+	fn := "integrationservice.Find"
+	log := s.l.With(sl.Module(fn))
+
+	i, err := s.ip.Find(ctx, userId)
+	if err != nil {
+		log.Error("failed to find integrations", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	if i == nil {
+		if err := s.is.Create(ctx, userId); err != nil {
+			return nil, err
+		}
+
+		newI, err := s.ip.Find(ctx, userId)
+		if err != nil {
+			return nil, err
+		}
+
+		i = newI
+	}
+
+	return i, nil
 }
 
 func (s *Service) Save(ctx context.Context, req *domain.SetIntegrations) error {

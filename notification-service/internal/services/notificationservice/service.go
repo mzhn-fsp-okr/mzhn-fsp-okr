@@ -26,22 +26,35 @@ type Notificator interface {
 	SendMail(ctx context.Context, mail string, event *domain.EventInfo, eventType domain.EventType) error
 }
 
+type EventProvider interface {
+	Find(ctx context.Context, eventId string) (*domain.EventInfo, error)
+}
+
 type Service struct {
 	l           *slog.Logger
 	cfg         *config.Config
 	sp          SubscribersProvider
 	ip          IntegrationProvider
 	up          UserProvider
+	ep          EventProvider
 	notificator Notificator
 }
 
-func New(cfg *config.Config, sp SubscribersProvider, ip IntegrationProvider, notificator Notificator, up UserProvider) *Service {
+func New(
+	cfg *config.Config,
+	sp SubscribersProvider,
+	ip IntegrationProvider,
+	notificator Notificator,
+	up UserProvider,
+	ep EventProvider,
+) *Service {
 	return &Service{
 		l:           slog.With(sl.Module("notification-service")),
 		cfg:         cfg,
 		sp:          sp,
 		ip:          ip,
 		up:          up,
+		ep:          ep,
 		notificator: notificator,
 	}
 }
