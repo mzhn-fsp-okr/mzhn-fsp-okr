@@ -27,10 +27,21 @@ func (s *Service) ProcessUpcomingEvent(ctx context.Context, msg *domain.Upcoming
 		return fmt.Errorf("%s: %w", fn, err)
 	}
 
+	if integrations == nil {
+		log.Error("integrations not found", slog.Any("for", user))
+		return nil
+	}
+
 	event, err := s.ep.Find(ctx, msg.EventId)
 	if err != nil {
 		log.Error("failed getting event", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)
+	}
+
+	log.Debug("found event", slog.Any("event", event))
+
+	if event == nil {
+		return nil
 	}
 
 	if integrations.TelegramUsername != nil {
