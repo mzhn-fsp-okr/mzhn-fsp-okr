@@ -1,12 +1,14 @@
 syntax="proto3";
 
 package events;
+import "google/protobuf/empty.proto";
 
 option go_package="mzhn/proto/event-service;espb";
 
 service EventService {
   rpc Load(stream LoadRequest) returns (LoadResponse);
   rpc Events(stream EventRequest) returns (stream EventResponse);
+  rpc GetUpcomingEvents(google.protobuf.Empty) returns (stream UpcomingEventResponse);
 }
 
 message DateRange {
@@ -55,4 +57,9 @@ message EventRequest {
 
 message EventResponse {
   EventInfo info = 1;
+}
+
+message UpcomingEventResponse {
+  string eventId = 1; 
+  uint32 daysLeft = 2; // Кол-во дней до эвента
 }
