@@ -15,6 +15,8 @@ import (
 	"mzhn/subscriptions-service/pb/authpb"
 	"mzhn/subscriptions-service/pb/espb"
 
+	ssgrpc "mzhn/subscriptions-service/internal/transport/grpc"
+
 	"github.com/google/wire"
 	_ "github.com/jackc/pgx/stdlib"
 	"google.golang.org/grpc"
@@ -45,6 +47,9 @@ func _servers(cfg *config.Config, ss *subscriptionservice.Service, as *authservi
 		servers = append(servers, http.New(cfg, as, ss))
 	}
 
+	if cfg.Grpc.Enabled {
+		servers = append(servers, ssgrpc.New(cfg, ss))
+	}
 	return servers
 }
 

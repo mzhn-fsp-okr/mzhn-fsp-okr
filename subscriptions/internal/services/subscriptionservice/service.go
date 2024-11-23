@@ -142,3 +142,17 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 		}
 	}
 }
+
+func (s *Service) GetUsersSubscribedToEvent(eventId string) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersSubscribedToEvent"))
+
+	log.Debug("get users subscribed to event", slog.Any("eventId", eventId))
+	return s.storage.GetUsersSubscribedToEvent(eventId)
+}
+
+func (s *Service) GetUsersSubscribedToSport(sportId string) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersSubscribedToSport"))
+
+	log.Debug("get users subscribed to sport", slog.Any("sportId", sportId))
+	return s.storage.GetUsersSubscribedToSport(sportId)
+}

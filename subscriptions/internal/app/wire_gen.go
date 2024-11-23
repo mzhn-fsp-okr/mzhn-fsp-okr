@@ -8,7 +8,7 @@ package app
 
 import (
 	"fmt"
-	"google.golang.org/grpc"
+	grpc2 "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -17,6 +17,7 @@ import (
 	"mzhn/subscriptions-service/internal/services/authservice"
 	"mzhn/subscriptions-service/internal/services/subscriptionservice"
 	"mzhn/subscriptions-service/internal/storage/pg/subscriptions"
+	"mzhn/subscriptions-service/internal/transport/grpc"
 	"mzhn/subscriptions-service/internal/transport/http"
 	"mzhn/subscriptions-service/pb/authpb"
 	"mzhn/subscriptions-service/pb/espb"
@@ -60,12 +61,15 @@ func _servers(cfg *config.Config, ss *subscriptionservice.Service, as *authservi
 		servers = append(servers, http.New(cfg, as, ss))
 	}
 
+	if cfg.Grpc.Enabled {
+		servers = append(servers, grpc.New(cfg, ss))
+	}
 	return servers
 }
 
 func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 	addr := cfg.AuthService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +79,7 @@ func _authpb(cfg *config.Config) (authpb.AuthClient, error) {
 
 func _eventspb(cfg *config.Config) (espb.EventServiceClient, error) {
 	addr := cfg.EventService.ConnectionString()
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc2.NewClient(addr, grpc2.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

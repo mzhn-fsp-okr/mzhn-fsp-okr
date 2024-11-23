@@ -8,6 +8,8 @@ type SubscriptionsStorage interface {
 	DeleteSport(sportSubscription *SportSubscription) error
 	DeleteEvent(eventSubscription *EventSubscription) error
 	GetUserEventsId(userId string) ([]string, error)
+	GetUsersSubscribedToEvent(eventId string) ([]string, error)
+	GetUsersSubscribedToSport(sportId string) ([]string, error)
 }
 
 type SubscriptionsService interface {
@@ -16,4 +18,6 @@ type SubscriptionsService interface {
 	UnsubscribeFromSport(dto *SportSubscription) error
 	UnsubscribeFromEvent(dto *EventSubscription) error
 	GetUserEvents(userId string) ([]*espb.EventInfo, error)
+	GetUsersSubscribedToEvent(eventId string) ([]string, error)
+	GetUsersSubscribedToSport(sportId string) ([]string, error)
 }
