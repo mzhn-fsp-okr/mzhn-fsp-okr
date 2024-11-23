@@ -16,9 +16,6 @@ type RabbitMqConsumer struct {
 	channel *amqp091.Channel
 
 	ns *notificationservice.Service
-
-	upcomingEventsQueue string
-	newEventsQueue      string
 }
 
 func New(cfg *config.Config, channel *amqp091.Channel, ns *notificationservice.Service) *RabbitMqConsumer {
@@ -27,9 +24,6 @@ func New(cfg *config.Config, channel *amqp091.Channel, ns *notificationservice.S
 		cfg:     cfg,
 		channel: channel,
 		ns:      ns,
-
-		upcomingEventsQueue: cfg.Amqp.UpcomingEventsQueue,
-		newEventsQueue:      cfg.Amqp.NewEventsQueue,
 	}
 
 }

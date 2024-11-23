@@ -61,5 +61,5 @@ const (
 )
 
 func (e EventType) String() string {
-	return [...]string{"new", "upcoming"}[e]
+	return [...]string{"new", "upcoming", "new-sub"}[e]
 }

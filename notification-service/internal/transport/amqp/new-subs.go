@@ -16,7 +16,7 @@ func (a *RabbitMqConsumer) consumeNewSubs(ctx context.Context) error {
 
 	messages, err := a.channel.ConsumeWithContext(
 		ctx,
-		a.upcomingEventsQueue,
+		a.cfg.Amqp.SubscriptionsQueue,
 		"",
 		false,
 		false,

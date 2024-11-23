@@ -155,7 +155,7 @@ func _amqp(cfg *config.Config) (*amqp091.Channel, func(), error) {
 		}, err
 	}
 
-	if err := amqp_setup_exchange(cfg, channel, cfg.Amqp.NotificationsExchange, cfg.Amqp.NewEventsQueue, cfg.Amqp.UpcomingEventsQueue); err != nil {
+	if err := amqp_setup_exchange(cfg, channel, cfg.Amqp.NotificationsExchange, cfg.Amqp.NewEventsQueue, cfg.Amqp.UpcomingEventsQueue, cfg.Amqp.SubscriptionsQueue); err != nil {
 		slog.Error("failed to setup notifications exchange", sl.Err(err))
 		return nil, func() {
 			channel.Close()

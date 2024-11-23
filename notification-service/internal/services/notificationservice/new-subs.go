@@ -43,6 +43,14 @@ func (s *Service) pushEvent(ctx context.Context, user *domain.User, eventId stri
 	fn := "notification-service.pushEvent"
 	log := s.l.With(sl.Method(fn))
 
+	log.Info(
+		"sending notification to subscriber",
+		slog.Any("subscriber", user),
+		slog.Any("integrations", integrations),
+		slog.Any("event", eventId),
+		slog.Any("type", t.String()),
+	)
+
 	event, err := s.ep.Event(ctx, eventId)
 	if err != nil {
 		log.Error("failed getting event", sl.Err(err))
@@ -57,10 +65,11 @@ func (s *Service) pushEvent(ctx context.Context, user *domain.User, eventId stri
 
 	j := map[string]any{
 		"event": event,
-		"type":  t,
+		"type":  t.String(),
 	}
 
 	if integrations.TelegramUsername != nil {
+		log.Debug("sending notification to subscriber (telegram)")
 		j["receiver"] = *integrations.TelegramUsername
 		if err := s.notificator.SendTelegram(ctx, j); err != nil {
 			log.Error("failed sending notification to subscriber (telegram)", sl.Err(err))
@@ -95,7 +104,7 @@ func (s *Service) pushSport(ctx context.Context, user *domain.User, sportId stri
 
 	j := map[string]any{
 		"sport": sport,
-		"type":  t,
+		"type":  t.String(),
 	}
 
 	if integrations.TelegramUsername != nil {

@@ -38,4 +38,5 @@ message UsersEventByDaysResponse {
 message NotifyUserRequest {
     string userId = 1;
     DaysLeft daysLeft = 2;
+    string eventId = 3;
 }

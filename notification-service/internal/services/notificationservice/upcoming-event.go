@@ -32,5 +32,6 @@ func (s *Service) ProcessUpcomingEvent(ctx context.Context, msg *domain.Upcoming
 		return nil
 	}
 
+	log.Info("sending notification about upcoming to subscriber", slog.Any("subscriber", user), slog.Any("integrations", integrations))
 	return s.pushEvent(ctx, user, msg.EventId, integrations, domain.EventTypeUpcoming)
 }
