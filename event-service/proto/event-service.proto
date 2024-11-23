@@ -9,6 +9,7 @@ service EventService {
   rpc Load(stream LoadRequest) returns (LoadResponse);
   rpc Event(EventRequest) returns (EventResponse);
   rpc Events(stream EventRequest) returns (stream EventResponse);
+  rpc Sports(stream SportRequest) returns (stream SportResponse);
   rpc GetUpcomingEvents(google.protobuf.Empty) returns (stream UpcomingEventResponse);
 }
 
@@ -73,4 +74,12 @@ message EventResponse {
 message UpcomingEventResponse {
   EventInfo event = 1;  
   uint32 daysLeft = 2; // Кол-во дней до эвента
+}
+
+message SportRequest {
+  string id = 1;
+}
+
+message SportResponse {
+  SportSubtype sportSubType = 1;
 }

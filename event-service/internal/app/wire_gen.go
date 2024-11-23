@@ -56,7 +56,7 @@ func New() (*App, func(), error) {
 	sportstorageStorage := sportstorage.New(configConfig, pool)
 	sportserviceService := sportservice.New(configConfig, sportstorageStorage)
 	server := http.New(configConfig, service, eventserviceService, sportserviceService)
-	grpcServer := grpc.New(configConfig, eventserviceService)
+	grpcServer := grpc.New(configConfig, eventserviceService, sportserviceService)
 	v := _servers(configConfig, server, grpcServer)
 	app := newApp(configConfig, v)
 	return app, func() {

@@ -26,6 +26,7 @@ type EventServiceClient interface {
 	Load(ctx context.Context, opts ...grpc.CallOption) (EventService_LoadClient, error)
 	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
 	Events(ctx context.Context, opts ...grpc.CallOption) (EventService_EventsClient, error)
+	Sports(ctx context.Context, opts ...grpc.CallOption) (EventService_SportsClient, error)
 	GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (EventService_GetUpcomingEventsClient, error)
 }
 
@@ -111,8 +112,39 @@ func (x *eventServiceEventsClient) Recv() (*EventResponse, error) {
 	return m, nil
 }
 
+func (c *eventServiceClient) Sports(ctx context.Context, opts ...grpc.CallOption) (EventService_SportsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[2], "/events.EventService/Sports", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventServiceSportsClient{stream}
+	return x, nil
+}
+
+type EventService_SportsClient interface {
+	Send(*SportRequest) error
+	Recv() (*SportResponse, error)
+	grpc.ClientStream
+}
+
+type eventServiceSportsClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventServiceSportsClient) Send(m *SportRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *eventServiceSportsClient) Recv() (*SportResponse, error) {
+	m := new(SportResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *eventServiceClient) GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (EventService_GetUpcomingEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[2], "/events.EventService/GetUpcomingEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[3], "/events.EventService/GetUpcomingEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +182,7 @@ type EventServiceServer interface {
 	Load(EventService_LoadServer) error
 	Event(context.Context, *EventRequest) (*EventResponse, error)
 	Events(EventService_EventsServer) error
+	Sports(EventService_SportsServer) error
 	GetUpcomingEvents(*emptypb.Empty, EventService_GetUpcomingEventsServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
@@ -166,6 +199,9 @@ func (UnimplementedEventServiceServer) Event(context.Context, *EventRequest) (*E
 }
 func (UnimplementedEventServiceServer) Events(EventService_EventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method Events not implemented")
+}
+func (UnimplementedEventServiceServer) Sports(EventService_SportsServer) error {
+	return status.Errorf(codes.Unimplemented, "method Sports not implemented")
 }
 func (UnimplementedEventServiceServer) GetUpcomingEvents(*emptypb.Empty, EventService_GetUpcomingEventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetUpcomingEvents not implemented")
@@ -253,6 +289,32 @@ func (x *eventServiceEventsServer) Recv() (*EventRequest, error) {
 	return m, nil
 }
 
+func _EventService_Sports_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EventServiceServer).Sports(&eventServiceSportsServer{stream})
+}
+
+type EventService_SportsServer interface {
+	Send(*SportResponse) error
+	Recv() (*SportRequest, error)
+	grpc.ServerStream
+}
+
+type eventServiceSportsServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventServiceSportsServer) Send(m *SportResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *eventServiceSportsServer) Recv() (*SportRequest, error) {
+	m := new(SportRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func _EventService_GetUpcomingEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -295,6 +357,12 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Events",
 			Handler:       _EventService_Events_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Sports",
+			Handler:       _EventService_Sports_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

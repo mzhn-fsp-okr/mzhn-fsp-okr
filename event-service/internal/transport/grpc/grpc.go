@@ -7,6 +7,7 @@ import (
 	"mzhn/event-service/internal/config"
 	"mzhn/event-service/internal/domain"
 	"mzhn/event-service/internal/services/eventservice"
+	"mzhn/event-service/internal/services/sportservice"
 	"mzhn/event-service/pb/espb"
 	"mzhn/event-service/pkg/sl"
 	"net"
@@ -25,6 +26,7 @@ type Server struct {
 	cfg *config.Config
 	l   *slog.Logger
 	es  *eventservice.Service
+	ss  *sportservice.Service
 	*espb.UnimplementedEventServiceServer
 }
 
@@ -72,11 +74,12 @@ func (s *Server) Event(ctx context.Context, in *espb.EventRequest) (*espb.EventR
 	return response, nil
 }
 
-func New(cfg *config.Config, es *eventservice.Service) *Server {
+func New(cfg *config.Config, es *eventservice.Service, ss *sportservice.Service) *Server {
 	return &Server{
 		cfg: cfg,
 		l:   slog.With(sl.Module("grpc")),
 		es:  es,
+		ss:  ss,
 	}
 }
 
