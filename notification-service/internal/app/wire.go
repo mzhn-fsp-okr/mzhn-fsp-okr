@@ -49,6 +49,7 @@ func New() (*App, func(), error) {
 
 		integrationservice.New,
 		wire.Bind(new(integrationservice.IntegrationsSaver), new(*integrationstorage.Storage)),
+		wire.Bind(new(integrationservice.IntegrationsProvider), new(*integrationstorage.Storage)),
 
 		notificationservice.New,
 		wire.Bind(new(notificationservice.UserProvider), new(*authapi.Api)),

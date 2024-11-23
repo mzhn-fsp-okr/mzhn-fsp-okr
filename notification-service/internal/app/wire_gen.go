@@ -52,7 +52,7 @@ func New() (*App, func(), error) {
 		return nil, nil, err
 	}
 	storage := integrationstorage.New(configConfig, pool)
-	integrationserviceService := integrationservice.New(configConfig, storage)
+	integrationserviceService := integrationservice.New(configConfig, storage, storage)
 	server := http.New(configConfig, service, integrationserviceService)
 	channel, cleanup2, err := _amqp(configConfig)
 	if err != nil {
