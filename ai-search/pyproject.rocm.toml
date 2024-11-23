@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "ai-search"
+version = "0.1.0"
+description = ""
+authors = ["Maxim Slipenko <no-reply@maxim.slipenko.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+langchain-core = "^0.3.20"
+langchain-gigachat = "^0.3.0"
+langserve = "^0.3.0"
+fastapi = "^0.115.5"
+langchain-community = "^0.3.7"
+transformers = "^4.46.3"
+torch = [{version = "^2.5.1", source="torch_rocm"}]
+pytorch-triton-rocm = [{version = "^3.1.0", source="torch_rocm"}]
+sentence-transformers = "^2.2.2"
+langchain-huggingface = "^0.1.2"
+lark = "^1.2.2"
+sse-starlette = "^2.1.3"
+
+[[tool.poetry.source]]
+name = "torchcpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "torch_rocm"
+url = "https://download.pytorch.org/whl/rocm6.2"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "torch_cuda"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
