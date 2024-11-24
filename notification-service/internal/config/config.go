@@ -26,6 +26,16 @@ type Cors struct {
 	AllowedOrigins string `env:"CORS_ALLOWED_ORIGINS" env-default:"localhost:3000"`
 }
 
+type Grpc struct {
+	Host          string `env:"GRPC_HOST" env-default:"0.0.0.0"`
+	Port          int    `env:"GRPC_PORT" env-default:"7000"`
+	UseReflection bool   `env:"GRPC_USE_REFLECTION" env-default:"false"`
+}
+
+func (g *Grpc) Addr() string {
+	return fmt.Sprintf("%s:%d", g.Host, g.Port)
+}
+
 type Amqp struct {
 	Host string `env:"AMQP_HOST" env-required:"true"`
 	Port int    `env:"AMQP_PORT" env-required:"true"`
@@ -35,6 +45,7 @@ type Amqp struct {
 	NotificationsExchange string `env:"AMQP_NOTIFICATIONS_EXCHANGE" env-default:"notifications"`
 	NewEventsQueue        string `env:"AMQP_NEW_EVENTS_EVENTS_QUEUE" env-default:"new-events"`
 	UpcomingEventsQueue   string `env:"AMQP_UPCOMING_EVENTS_QUEUE" env-default:"upcoming-events"`
+	SubscriptionsQueue    string `env:"AMQP_NEW_SUBSCRIPTION_QUEUE" env-default:"new-subscriptions"`
 
 	SubscriptionExchange string `env:"AMQP_SUBSCRIPTIONS_EXCHANGE" env-default:"subscriptions"`
 	TelegramQueue        string `env:"AMQP_TELEGRAM_QUEUE" env-default:"telegram-queue"`
@@ -75,14 +86,30 @@ func (s *SubscriptionService) ConnectionString() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
+type EventsService struct {
+	Host string `env:"EVENT_SERVICE_HOST" env-required:"true"`
+	Port int    `env:"EVENT_SERVICE_PORT" env-required:"true"`
+}
+
+func (s *EventsService) ConnectionString() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
+type Verificator struct {
+	TTL int `env:"VERIFICATOR_TTL" env-default:"10"`
+}
+
 type Config struct {
 	Env                 string `env:"ENV" env-default:"local"`
 	App                 App
 	Http                Http
+	Grpc                Grpc
 	Amqp                Amqp
 	Pg                  Pg
 	AuthService         AuthService
 	SubscriptionService SubscriptionService
+	EventsService       EventsService
+	Verificator         Verificator
 }
 
 func New() *Config {

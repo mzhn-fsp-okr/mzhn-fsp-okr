@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"mzhn/subscriptions-service/internal/domain"
 	"mzhn/subscriptions-service/pb/espb"
+	"mzhn/subscriptions-service/pb/sspb"
 	"mzhn/subscriptions-service/pkg/sl"
 
 	"google.golang.org/grpc/codes"
@@ -18,27 +19,45 @@ type Service struct {
 	l       *slog.Logger
 	storage domain.SubscriptionsStorage
 	es      espb.EventServiceClient
+	pub     domain.SubscribeNotificationPublisher
 }
 
-func New(storage domain.SubscriptionsStorage, es espb.EventServiceClient) *Service {
+func New(storage domain.SubscriptionsStorage, es espb.EventServiceClient, pub domain.SubscribeNotificationPublisher) *Service {
 	return &Service{
 		l:       slog.With(sl.Module(("SubscriptionsService"))),
 		storage: storage,
 		es:      es,
+		pub:     pub,
 	}
 }
 func (s *Service) SubscribeToSport(dto *domain.SportSubscription) (*domain.SportSubscription, error) {
 	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToSport"))
 
 	log.Debug("creating sport subscription", slog.Any("userId", dto.UserId), slog.Any("sportId", dto.SportId))
-	return s.storage.CreateSport(dto)
+	sport, err := s.storage.CreateSport(dto)
+	if err != nil {
+		log.Error("cannot subscribe to sport", sl.Err(err))
+		return nil, err
+	}
+
+	s.pub.NotifyAboutSubscription(context.Background(), dto.UserId, dto.SportId, false)
+
+	return sport, nil
 }
 
 func (s *Service) SubscribeToEvent(dto *domain.EventSubscription) (*domain.EventSubscription, error) {
 	log := s.l.With(sl.Method("SubscriptionsService.SubscribeToEvent"))
 
 	log.Debug("creating event subscription", slog.Any("userId", dto.UserId), slog.Any("eventId", dto.EventId))
-	return s.storage.CreateEvent(dto)
+	event, err := s.storage.CreateEvent(dto)
+	if err != nil {
+		log.Error("cannot subscribe to event", sl.Err(err))
+		return nil, err
+	}
+
+	s.pub.NotifyAboutSubscription(context.Background(), dto.UserId, dto.EventId, true)
+
+	return event, nil
 }
 
 func (s *Service) UnsubscribeFromSport(dto *domain.SportSubscription) error {
@@ -141,4 +160,115 @@ func (s *Service) GetUserEvents(userId string) ([]*espb.EventInfo, error) {
 			events = append(events, event)
 		}
 	}
+}
+
+func (s *Service) GetUserSports(userId string) ([]*espb.SportTypeWithSubtypes, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUserEvents"))
+	log.Debug("get user events", slog.Any("userId", userId))
+
+	sportIds, err := s.storage.GetUserSportsId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sportIds) == 0 {
+		return []*espb.SportTypeWithSubtypes{}, nil
+	}
+
+	stream, err := s.es.Sports(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer stream.CloseSend()
+
+	// Канал для сбора результатов
+	sportsChan := make(chan *espb.SportTypeWithSubtypes)
+	// Канал для ошибок
+	errChan := make(chan error, 1)
+	// Канал для сигнализации о завершении отправки
+	sendDone := make(chan struct{})
+
+	// Горутина для отправки запросов
+	go func() {
+		for _, sportId := range sportIds {
+			if err := stream.Send(&espb.SportRequest{
+				Id: sportId,
+			}); err != nil {
+				s.l.Error("cannot send while get user sports", slog.Any("error", err))
+				errChan <- err
+				return
+			}
+		}
+		if err := stream.CloseSend(); err != nil {
+			s.l.Error("cannot close send while get user events", slog.Any("error", err))
+			errChan <- err
+			return
+		}
+		close(sendDone)
+	}()
+
+	// Горутина для получения ответов
+	go func() {
+		for {
+			sportInfo, err := stream.Recv()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					// Нормальное завершение стрима
+					close(sportsChan)
+					return
+				}
+				if grpcErr, ok := status.FromError(err); ok {
+					if grpcErr.Code() == codes.NotFound {
+						// Пропускаем не найденные события
+						continue
+					}
+				}
+				errChan <- err
+				return
+			}
+
+			sportsChan <- sportInfo.SportType
+		}
+	}()
+
+	var sports []*espb.SportTypeWithSubtypes
+	for {
+		select {
+		case err := <-errChan:
+			return nil, err
+		case sport, ok := <-sportsChan:
+			if !ok {
+				return sports, nil
+			}
+			sports = append(sports, sport)
+		}
+	}
+}
+
+func (s *Service) GetUsersSubscribedToEvent(eventId string) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersSubscribedToEvent"))
+
+	log.Debug("get users subscribed to event", slog.Any("eventId", eventId))
+	return s.storage.GetUsersSubscribedToEvent(eventId)
+}
+
+func (s *Service) GetUsersSubscribedToSport(sportId string) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersSubscribedToSport"))
+
+	log.Debug("get users subscribed to sport", slog.Any("sportId", sportId))
+	return s.storage.GetUsersSubscribedToSport(sportId)
+}
+
+func (s *Service) GetUsersFromEventByDaysLeft(eventId string, daysLeft sspb.DaysLeft) ([]string, error) {
+	log := s.l.With(sl.Method("SubscriptionsService.GetUsersFromEventByDaysLeft"))
+
+	log.Debug("get users from event by days left", slog.Any("eventId", eventId))
+	return s.storage.GetUsersFromEventByDaysLeft(eventId, daysLeft)
+}
+
+func (s *Service) NotifyUser(userId string, daysLeft sspb.DaysLeft, eventId string) error {
+	log := s.l.With(sl.Method("SubscriptionsService.NotifyUser"))
+
+	log.Debug("notify user", slog.Any("userId", userId), slog.Any("daysLeft", daysLeft.String()))
+	return s.storage.NotifyUser(userId, daysLeft, eventId)
 }

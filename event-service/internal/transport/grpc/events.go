@@ -21,6 +21,10 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 	for {
 		req, err := stream.Recv()
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			log.Error("failed to receive event request", sl.Err(err))
 			return err
 		}
 
@@ -41,12 +45,18 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 
 		response := &espb.EventResponse{
 			Info: &espb.EventInfo{
-				Id:           event.Id,
-				EkpId:        event.EkpId,
-				SportType:    event.SportType,
-				SportSubtype: event.SportSubtype,
-				Name:         event.Name,
-				Description:  event.Description,
+				Id:    event.Id,
+				EkpId: event.EkpId,
+				SportSubtype: &espb.SportSubtype{
+					Id:   event.SportSubtype.Id,
+					Name: event.SportSubtype.Name,
+					Parent: &espb.SportType{
+						Id:   event.SportSubtype.Parent.Id,
+						Name: event.SportSubtype.Parent.Name,
+					},
+				},
+				Name:        event.Name,
+				Description: event.Description,
 				Dates: &espb.DateRange{
 					DateFrom: event.Dates.From.Format("02.01.2006"),
 					DateTo:   event.Dates.To.Format("02.01.2006"),
@@ -65,6 +75,7 @@ func (s *Server) Events(stream espb.EventService_EventsServer) error {
 
 		log.Debug("sending event response", slog.Any("response", response))
 		if err := stream.Send(response); err != nil {
+			log.Error("failed to send event response", sl.Err(err))
 			return err
 		}
 	}

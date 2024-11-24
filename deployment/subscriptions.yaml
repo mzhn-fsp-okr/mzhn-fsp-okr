@@ -25,12 +25,23 @@ services:
       EVENT_SERVICE_HOST: event-service
       EVENT_SERVICE_PORT: 7000
 
+      AMQP_HOST: rmq
+      AMQP_PORT: ${AMQP_PORT}
+      AMQP_USER: ${AMQP_USER}
+      AMQP_PASS: ${AMQP_PASS}
+
+      AMQP_NOTIFICATIONS_EXCHANGE: ${AMQP_NOTIFICATIONS_EXCHANGE}
+      AMQP_NEW_SUBSCRIPTION_QUEUE: ${AMQP_NEW_SUBSCRIPTION_QUEUE}
+
       HTTP_PORT: 80
       GRPC_PORT: 7000
 
       ENV: prod
     depends_on:
       - pg-ss
+      - auth-service
+      - event-service
+
     ports:
       - "${SUBSCRIPTIONS_SERVICE_HTTP_PORT}:80"
       - "${SUBSCRIPTIONS_SERVICE_GRPC_PORT}:7000"

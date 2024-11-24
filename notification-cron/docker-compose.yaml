@@ -1,0 +1,7 @@
+services:
+  notifications-cron-service:
+    container_name: mzhn-notifications-cron
+    build:
+      context: .
+    env_file:
+      - .env

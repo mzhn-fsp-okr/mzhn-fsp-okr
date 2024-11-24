@@ -16,9 +16,6 @@ type RabbitMqConsumer struct {
 	channel *amqp091.Channel
 
 	ns *notificationservice.Service
-
-	upcomingEventsQueue string
-	newEventsQueue      string
 }
 
 func New(cfg *config.Config, channel *amqp091.Channel, ns *notificationservice.Service) *RabbitMqConsumer {
@@ -27,9 +24,6 @@ func New(cfg *config.Config, channel *amqp091.Channel, ns *notificationservice.S
 		cfg:     cfg,
 		channel: channel,
 		ns:      ns,
-
-		upcomingEventsQueue: cfg.Amqp.UpcomingEventsQueue,
-		newEventsQueue:      cfg.Amqp.NewEventsQueue,
 	}
 
 }
@@ -43,13 +37,19 @@ func (r *RabbitMqConsumer) Run(ctx context.Context) error {
 		}
 	}(ctx)
 
-	// go func(ctx context.Context) {
-	// 	if err := r.consumeNewEvents(ctx); err != nil {
-	// 		r.l.Error("consumeUpcomingEvents", sl.Err(err))
-	// 		return
-	// 	}
-	// }(ctx)
+	go func(ctx context.Context) {
+		if err := r.runConsumingNewSubs(ctx); err != nil {
+			r.l.Error("consumeNewSubs", sl.Err(err))
+			return
+		}
+	}(ctx)
 
+	go func(ctx context.Context) {
+		if err := r.consumeNewEvents(ctx); err != nil {
+			r.l.Error("consumeNewEvents", sl.Err(err))
+			return
+		}
+	}(ctx)
 	<-ctx.Done()
 	return nil
 }

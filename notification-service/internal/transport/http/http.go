@@ -48,7 +48,9 @@ func (h *Server) setup() {
 	tokguard := middleware.Token()
 	authguard := middleware.RequireAuth(h.as, h.cfg)
 
+	h.GET("/", handlers.ProfileIntegrations(h.is), tokguard(), authguard())
 	h.PUT("/", handlers.UpdateIntegrations(h.is), tokguard(), authguard())
+	h.GET("/telegram/code", handlers.GetToken(h.is), tokguard(), authguard())
 }
 
 func (h *Server) Run(ctx context.Context) error {

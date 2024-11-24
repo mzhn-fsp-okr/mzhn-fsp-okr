@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EventService_Load_FullMethodName   = "/events.EventService/Load"
-	EventService_Events_FullMethodName = "/events.EventService/Events"
+	EventService_Load_FullMethodName              = "/events.EventService/Load"
+	EventService_Event_FullMethodName             = "/events.EventService/Event"
+	EventService_Events_FullMethodName            = "/events.EventService/Events"
+	EventService_Sport_FullMethodName             = "/events.EventService/Sport"
+	EventService_Sports_FullMethodName            = "/events.EventService/Sports"
+	EventService_GetUpcomingEvents_FullMethodName = "/events.EventService/GetUpcomingEvents"
 )
 
 // EventServiceClient is the client API for EventService service.
@@ -28,7 +33,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
 	Load(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[LoadRequest, LoadResponse], error)
+	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
 	Events(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[EventRequest, EventResponse], error)
+	Sport(ctx context.Context, in *SportRequest, opts ...grpc.CallOption) (*SportResponse, error)
+	Sports(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SportRequest, SportResponse], error)
+	GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[UpcomingEventResponse], error)
 }
 
 type eventServiceClient struct {
@@ -52,6 +61,16 @@ func (c *eventServiceClient) Load(ctx context.Context, opts ...grpc.CallOption) 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventService_LoadClient = grpc.ClientStreamingClient[LoadRequest, LoadResponse]
 
+func (c *eventServiceClient) Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EventResponse)
+	err := c.cc.Invoke(ctx, EventService_Event_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *eventServiceClient) Events(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[EventRequest, EventResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[1], EventService_Events_FullMethodName, cOpts...)
@@ -65,12 +84,58 @@ func (c *eventServiceClient) Events(ctx context.Context, opts ...grpc.CallOption
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventService_EventsClient = grpc.BidiStreamingClient[EventRequest, EventResponse]
 
+func (c *eventServiceClient) Sport(ctx context.Context, in *SportRequest, opts ...grpc.CallOption) (*SportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SportResponse)
+	err := c.cc.Invoke(ctx, EventService_Sport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eventServiceClient) Sports(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SportRequest, SportResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[2], EventService_Sports_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[SportRequest, SportResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventService_SportsClient = grpc.BidiStreamingClient[SportRequest, SportResponse]
+
+func (c *eventServiceClient) GetUpcomingEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[UpcomingEventResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[3], EventService_GetUpcomingEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, UpcomingEventResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventService_GetUpcomingEventsClient = grpc.ServerStreamingClient[UpcomingEventResponse]
+
 // EventServiceServer is the server API for EventService service.
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility.
 type EventServiceServer interface {
 	Load(grpc.ClientStreamingServer[LoadRequest, LoadResponse]) error
+	Event(context.Context, *EventRequest) (*EventResponse, error)
 	Events(grpc.BidiStreamingServer[EventRequest, EventResponse]) error
+	Sport(context.Context, *SportRequest) (*SportResponse, error)
+	Sports(grpc.BidiStreamingServer[SportRequest, SportResponse]) error
+	GetUpcomingEvents(*emptypb.Empty, grpc.ServerStreamingServer[UpcomingEventResponse]) error
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -84,8 +149,20 @@ type UnimplementedEventServiceServer struct{}
 func (UnimplementedEventServiceServer) Load(grpc.ClientStreamingServer[LoadRequest, LoadResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method Load not implemented")
 }
+func (UnimplementedEventServiceServer) Event(context.Context, *EventRequest) (*EventResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Event not implemented")
+}
 func (UnimplementedEventServiceServer) Events(grpc.BidiStreamingServer[EventRequest, EventResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method Events not implemented")
+}
+func (UnimplementedEventServiceServer) Sport(context.Context, *SportRequest) (*SportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sport not implemented")
+}
+func (UnimplementedEventServiceServer) Sports(grpc.BidiStreamingServer[SportRequest, SportResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method Sports not implemented")
+}
+func (UnimplementedEventServiceServer) GetUpcomingEvents(*emptypb.Empty, grpc.ServerStreamingServer[UpcomingEventResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GetUpcomingEvents not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 func (UnimplementedEventServiceServer) testEmbeddedByValue()                      {}
@@ -115,6 +192,24 @@ func _EventService_Load_Handler(srv interface{}, stream grpc.ServerStream) error
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventService_LoadServer = grpc.ClientStreamingServer[LoadRequest, LoadResponse]
 
+func _EventService_Event_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).Event(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventService_Event_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).Event(ctx, req.(*EventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _EventService_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(EventServiceServer).Events(&grpc.GenericServerStream[EventRequest, EventResponse]{ServerStream: stream})
 }
@@ -122,13 +217,58 @@ func _EventService_Events_Handler(srv interface{}, stream grpc.ServerStream) err
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventService_EventsServer = grpc.BidiStreamingServer[EventRequest, EventResponse]
 
+func _EventService_Sport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).Sport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventService_Sport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).Sport(ctx, req.(*SportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EventService_Sports_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EventServiceServer).Sports(&grpc.GenericServerStream[SportRequest, SportResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventService_SportsServer = grpc.BidiStreamingServer[SportRequest, SportResponse]
+
+func _EventService_GetUpcomingEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventServiceServer).GetUpcomingEvents(m, &grpc.GenericServerStream[emptypb.Empty, UpcomingEventResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventService_GetUpcomingEventsServer = grpc.ServerStreamingServer[UpcomingEventResponse]
+
 // EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EventService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "events.EventService",
 	HandlerType: (*EventServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Event",
+			Handler:    _EventService_Event_Handler,
+		},
+		{
+			MethodName: "Sport",
+			Handler:    _EventService_Sport_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Load",
@@ -140,6 +280,17 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _EventService_Events_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "Sports",
+			Handler:       _EventService_Sports_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "GetUpcomingEvents",
+			Handler:       _EventService_GetUpcomingEvents_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "proto/event-service.proto",

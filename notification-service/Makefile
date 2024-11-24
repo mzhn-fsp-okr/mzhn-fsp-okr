@@ -14,8 +14,19 @@ AUTHPB=$(PB)/authpb
 AUTHPROTO=proto/auth.proto
 SBPB=$(PB)/sspb
 SBPROTO=proto/subscriptions-service.proto
+ESPB=$(PB)/espb
+ESPROTO=proto/event-service.proto
+NSPB=$(PB)/nspb
+NSPROTO=proto/notifications-service.proto
 protobuf:
 	cp -r ../proto .
+	protoc  \
+		--go_out=. \
+		--go_opt=M$(NSPROTO)=$(NSPB) \
+		--go-grpc_out=. \
+		--go-grpc_opt=M$(NSPROTO)=$(NSPB) \
+		$(NSPROTO)
+
 	protoc  \
 		--go_out=. \
 		--go_opt=M$(AUTHPROTO)=$(AUTHPB) \
@@ -29,6 +40,13 @@ protobuf:
 		--go-grpc_out=. \
 		--go-grpc_opt=M$(SBPROTO)=$(SBPB) \
 		$(SBPROTO)
+
+	protoc  \
+		--go_out=. \
+		--go_opt=M$(ESPROTO)=$(ESPB) \
+		--go-grpc_out=. \
+		--go-grpc_opt=M$(ESPROTO)=$(ESPB) \
+		$(ESPROTO)
 
 wire-gen:
 	wire ./internal/app

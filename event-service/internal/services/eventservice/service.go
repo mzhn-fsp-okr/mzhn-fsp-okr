@@ -12,7 +12,8 @@ import (
 
 type EventProvider interface {
 	Find(ctx context.Context, id string) (*domain.EventInfo, error)
-	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error
+	List(ctx context.Context, chEvents chan<- domain.EventInfo, filters ...model.EventsFilters) error
+	Count(ctx context.Context, filters model.EventsFilters) (int64, error)
 }
 
 type EventManager interface {
@@ -20,7 +21,7 @@ type EventManager interface {
 }
 
 type EventLoader interface {
-	Load(ctx context.Context, in *domain.EventLoadInfo) (string, error)
+	Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.EventInfo, bool, error)
 }
 
 type NotificationPublisher interface {
@@ -52,45 +53,48 @@ func (s *Service) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	log := s.l.With(sl.Method(fn))
 
 	log.Info("loading an event", slog.String("ekp", in.EkpId))
-	eid, err := s.el.Load(ctx, in)
+	event, old, err := s.el.Load(ctx, in)
 	if err != nil {
 		log.Error("failed to load event", sl.Err(err))
 		return "", err
 	}
 
-	event := domain.EventInfo{
-		Id:                      eid,
-		EkpId:                   in.EkpId,
-		SportType:               in.SportType,
-		SportSubtype:            in.SportSubtype,
-		Name:                    in.Name,
-		Description:             in.Description,
-		Dates:                   in.Dates,
-		Location:                in.Location,
-		Participants:            in.Participants,
-		ParticipantRequirements: in.ParticipantRequirements,
+	if !old {
+		log.Info("notificating about a new event", slog.String("eventId", event.Id))
+		if err := s.notificationPublisher.Notification(ctx, event); err != nil {
+			log.Error("failed to publish notification", sl.Err(err))
+			return "", fmt.Errorf("%s: %w", fn, err)
+		}
 	}
 
-	log.Info("notificating about a new event", slog.String("eventId", eid))
-	if err := s.notificationPublisher.Notification(ctx, &event); err != nil {
-		log.Error("failed to publish notification", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
-	}
-
-	return eid, nil
+	return event.Id, nil
 }
 
-func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters model.EventsFilters) error {
+func (s *Service) List(ctx context.Context, chEvents chan<- domain.EventInfo, filters ...model.EventsFilters) error {
+
 	fn := "EventService.List"
 	log := s.l.With(sl.Method(fn))
 
-	err := s.ep.List(ctx, chEvents, filters)
+	err := s.ep.List(ctx, chEvents, filters...)
 	if err != nil {
 		log.Error("failed to list events", sl.Err(err))
 		return fmt.Errorf("%s: %w", fn, err)
 	}
 
 	return nil
+}
+
+func (s *Service) Count(ctx context.Context, filters model.EventsFilters) (int64, error) {
+	fn := "EventService.Count"
+	log := s.l.With(sl.Method(fn))
+
+	count, err := s.ep.Count(ctx, filters)
+	if err != nil {
+		log.Error("failed to count events", sl.Err(err))
+		return 0, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return count, nil
 }
 
 func (s *Service) Stale(ctx context.Context) error {

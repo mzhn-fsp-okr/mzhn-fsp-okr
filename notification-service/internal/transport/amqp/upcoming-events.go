@@ -7,6 +7,8 @@ import (
 	"mzhn/notification-service/internal/domain"
 	"mzhn/notification-service/pkg/sl"
 	"time"
+
+	"github.com/rabbitmq/amqp091-go"
 )
 
 func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
@@ -16,7 +18,7 @@ func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
 
 	messages, err := a.channel.ConsumeWithContext(
 		ctx,
-		a.upcomingEventsQueue,
+		a.cfg.Amqp.UpcomingEventsQueue,
 		"",
 		false,
 		false,
@@ -35,20 +37,8 @@ func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case message := <-messages:
-				body := message.Body
-				event := domain.EventInfo{}
-				if err := json.Unmarshal(body, &event); err != nil {
-					log.Error("failed to unmarshal event", sl.Err(err))
-					continue
-				}
-
-				if err := a.ns.ProcessUpcomingEvent(ctx, &event); err != nil {
-					log.Error("failed to process upcoming event", sl.Err(err), slog.String("body", string(body)))
-					continue
-				}
-
-				if err := message.Ack(false); err != nil {
-					log.Error("failed to ack message", sl.Err(err), slog.String("body", string(body)))
+				if err := a.consumeUpcomingEvent(ctx, message); err != nil {
+					log.Error("failed to consume upcoming event", sl.Err(err), slog.String("body", string(message.Body)))
 					continue
 				}
 			}
@@ -57,5 +47,31 @@ func (a *RabbitMqConsumer) consumeUpcomingEvents(ctx context.Context) error {
 
 	<-ctx.Done()
 	log.Info("stop consuming upcoming events", slog.String("uptime", time.Since(start).String()))
+	return nil
+}
+
+func (a *RabbitMqConsumer) consumeUpcomingEvent(ctx context.Context, message amqp091.Delivery) (err error) {
+	defer func() {
+		if err != nil {
+			message.Nack(false, true)
+		} else {
+			err = message.Ack(false)
+		}
+	}()
+
+	body := message.Body
+	msg := domain.UpcomingEventMessage{}
+	if err := json.Unmarshal(body, &msg); err != nil {
+		a.l.Error("failed to unmarshal event", sl.Err(err))
+		return err
+	}
+
+	a.l.Info("received message", slog.Any("message", msg))
+
+	if err := a.ns.ProcessUpcomingEvent(ctx, &msg); err != nil {
+		a.l.Error("failed to process upcoming event", sl.Err(err), slog.String("body", string(body)))
+		return err
+	}
+
 	return nil
 }

@@ -3,6 +3,10 @@ include:
   - event-service.yaml
   - rmq.yaml
   - subscriptions.yaml
+  - parser.yaml
+  - ai-search.yaml
+  - notification-service.yaml
+  - notifications-cron.yaml
 
 services:
   nginx:
@@ -13,3 +17,9 @@ services:
       - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - auth-service
+      - ai-search
+      - notification-service
+      - subscriptions-service
+      - event-service

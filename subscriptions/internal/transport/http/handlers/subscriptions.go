@@ -116,3 +116,16 @@ func GetUserEvents(ss *subscriptionservice.Service) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, echo.Map{"events": events})
 	}
 }
+
+func GetUserSports(ss *subscriptionservice.Service) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := c.Get(middleware.USER).(*authpb.UserInfo)
+
+		sports, err := ss.GetUserSports(user.Id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(http.StatusOK, echo.Map{"sports": sports})
+	}
+}

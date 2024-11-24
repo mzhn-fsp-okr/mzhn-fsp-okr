@@ -19,7 +19,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x13\x65vent-service.proto\x12\x06\x65vents"/\n\tDateRange\x12\x11\n\tdate_from\x18\x01 \x01(\t\x12\x0f\n\x07\x64\x61te_to\x18\x02 \x01(\t"m\n\x17ParticipantRequirements\x12\x0e\n\x06gender\x18\x01 \x01(\x08\x12\x14\n\x07min_age\x18\x02 \x01(\x05H\x00\x88\x01\x01\x12\x14\n\x07max_age\x18\x03 \x01(\x05H\x01\x88\x01\x01\x42\n\n\x08_min_ageB\n\n\x08_max_age"\xf2\x01\n\tEventInfo\x12\r\n\x05\x65kpId\x18\x01 \x01(\t\x12\x11\n\tsportType\x18\x02 \x01(\t\x12\x14\n\x0csportSubtype\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12 \n\x05\x64\x61tes\x18\x06 \x01(\x0b\x32\x11.events.DateRange\x12\x10\n\x08location\x18\x07 \x01(\t\x12\x14\n\x0cparticipants\x18\x08 \x01(\x05\x12@\n\x17participantRequirements\x18\t \x03(\x0b\x32\x1f.events.ParticipantRequirements".\n\x0bLoadRequest\x12\x1f\n\x04info\x18\x01 \x01(\x0b\x32\x11.events.EventInfo"\x1d\n\x0cLoadResponse\x12\r\n\x05saved\x18\x01 \x01(\x05"\x1a\n\x0c\x45ventRequest\x12\n\n\x02id\x18\x01 \x01(\t"0\n\rEventResponse\x12\x1f\n\x04info\x18\x01 \x01(\x0b\x32\x11.events.EventInfo2~\n\x0c\x45ventService\x12\x33\n\x04Load\x12\x13.events.LoadRequest\x1a\x14.events.LoadResponse(\x01\x12\x39\n\x06\x45vents\x12\x14.events.EventRequest\x1a\x15.events.EventResponse(\x01\x30\x01\x42\x1fZ\x1dmzhn/proto/event-service;espbb\x06proto3'
+    b'\n\x13\x65vent-service.proto\x12\x06\x65vents"/\n\tDateRange\x12\x11\n\tdate_from\x18\x01 \x01(\t\x12\x0f\n\x07\x64\x61te_to\x18\x02 \x01(\t"m\n\x17ParticipantRequirements\x12\x0e\n\x06gender\x18\x01 \x01(\x08\x12\x14\n\x07min_age\x18\x02 \x01(\x05H\x00\x88\x01\x01\x12\x14\n\x07max_age\x18\x03 \x01(\x05H\x01\x88\x01\x01\x42\n\n\x08_min_ageB\n\n\x08_max_age"\xfe\x01\n\tEventInfo\x12\r\n\x05\x65kpId\x18\x01 \x01(\t\x12\x11\n\tsportType\x18\x02 \x01(\t\x12\x14\n\x0csportSubtype\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12 \n\x05\x64\x61tes\x18\x06 \x01(\x0b\x32\x11.events.DateRange\x12\x10\n\x08location\x18\x07 \x01(\t\x12\x14\n\x0cparticipants\x18\x08 \x01(\x05\x12@\n\x17participantRequirements\x18\t \x03(\x0b\x32\x1f.events.ParticipantRequirements\x12\n\n\x02id\x18\n \x01(\t"\xf4\x01\n\x0bLoadRequest\x12\r\n\x05\x65kpId\x18\x01 \x01(\t\x12\x11\n\tsportType\x18\x02 \x01(\t\x12\x14\n\x0csportSubtype\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12 \n\x05\x64\x61tes\x18\x06 \x01(\x0b\x32\x11.events.DateRange\x12\x10\n\x08location\x18\x07 \x01(\t\x12\x14\n\x0cparticipants\x18\x08 \x01(\x05\x12@\n\x17participantRequirements\x18\t \x03(\x0b\x32\x1f.events.ParticipantRequirements"\x1d\n\x0cLoadResponse\x12\r\n\x05saved\x18\x01 \x01(\x05"\x1a\n\x0c\x45ventRequest\x12\n\n\x02id\x18\x01 \x01(\t"0\n\rEventResponse\x12\x1f\n\x04info\x18\x01 \x01(\x0b\x32\x11.events.EventInfo2~\n\x0c\x45ventService\x12\x33\n\x04Load\x12\x13.events.LoadRequest\x1a\x14.events.LoadResponse(\x01\x12\x39\n\x06\x45vents\x12\x14.events.EventRequest\x1a\x15.events.EventResponse(\x01\x30\x01\x42\x1fZ\x1dmzhn/proto/event-service;espbb\x06proto3'
 )
 
 _globals = globals()
@@ -33,15 +33,15 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals["_PARTICIPANTREQUIREMENTS"]._serialized_start = 80
     _globals["_PARTICIPANTREQUIREMENTS"]._serialized_end = 189
     _globals["_EVENTINFO"]._serialized_start = 192
-    _globals["_EVENTINFO"]._serialized_end = 434
-    _globals["_LOADREQUEST"]._serialized_start = 436
-    _globals["_LOADREQUEST"]._serialized_end = 482
-    _globals["_LOADRESPONSE"]._serialized_start = 484
-    _globals["_LOADRESPONSE"]._serialized_end = 513
-    _globals["_EVENTREQUEST"]._serialized_start = 515
-    _globals["_EVENTREQUEST"]._serialized_end = 541
-    _globals["_EVENTRESPONSE"]._serialized_start = 543
-    _globals["_EVENTRESPONSE"]._serialized_end = 591
-    _globals["_EVENTSERVICE"]._serialized_start = 593
-    _globals["_EVENTSERVICE"]._serialized_end = 719
+    _globals["_EVENTINFO"]._serialized_end = 446
+    _globals["_LOADREQUEST"]._serialized_start = 449
+    _globals["_LOADREQUEST"]._serialized_end = 693
+    _globals["_LOADRESPONSE"]._serialized_start = 695
+    _globals["_LOADRESPONSE"]._serialized_end = 724
+    _globals["_EVENTREQUEST"]._serialized_start = 726
+    _globals["_EVENTREQUEST"]._serialized_end = 752
+    _globals["_EVENTRESPONSE"]._serialized_start = 754
+    _globals["_EVENTRESPONSE"]._serialized_end = 802
+    _globals["_EVENTSERVICE"]._serialized_start = 804
+    _globals["_EVENTSERVICE"]._serialized_end = 930
 # @@protoc_insertion_point(module_scope)
