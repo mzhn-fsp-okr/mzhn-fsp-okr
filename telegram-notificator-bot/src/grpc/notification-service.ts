@@ -7,7 +7,7 @@ class NotificationService {
   client: NotificationServiceClient;
 
   constructor() {
-    const host = `${process.env.NOTIFICATION_GRPC_HOST}:${process.env.NOTIFICATION_GRPC_PORT}`;
+    const host = `${process.env.NOTIFICATION_SERVICE_HOST}:${process.env.NOTIFICATION_SERVICE_PORT}`;
     // Define the gRPC server URL
     const transport = new GrpcTransport({
       host: host,
