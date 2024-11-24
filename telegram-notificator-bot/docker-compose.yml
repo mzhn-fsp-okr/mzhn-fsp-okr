@@ -1,6 +1,7 @@
 services:
   bot:
-    container_name: chatbot-tg
+    restart: always
+    container_name: mzhn-chatbot-tg
     build:
       context: .
     env_file:
