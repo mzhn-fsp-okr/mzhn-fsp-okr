@@ -1,0 +1,22 @@
+services:
+  telegram-bot:
+    container_name: mzhn-telegram-bot
+    restart: always
+    build:
+      context: ../telegram-notificator-bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      AMQP_TELEGRAM_QUEUE: ${AMQP_TELEGRAM_QUEUE}
+
+      AMQP_HOST: rmq
+      AMQP_PORT: 5672
+      AMQP_USER: guest
+      AMQP_PASS: guest
+
+      NOTIFICATION_SERVICE_HOST: notification-service
+      NOTIFICATION_SERVICE_PORT: 7000
+    volumes:
+      - tgbotdata:/app/data
+
+volumes:
+  tgbotdata:
