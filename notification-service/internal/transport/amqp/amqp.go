@@ -38,12 +38,18 @@ func (r *RabbitMqConsumer) Run(ctx context.Context) error {
 	}(ctx)
 
 	go func(ctx context.Context) {
-		if err := r.consumeNewSubs(ctx); err != nil {
+		if err := r.runConsumingNewSubs(ctx); err != nil {
 			r.l.Error("consumeNewSubs", sl.Err(err))
 			return
 		}
 	}(ctx)
 
+	go func(ctx context.Context) {
+		if err := r.consumeNewEvents(ctx); err != nil {
+			r.l.Error("consumeNewEvents", sl.Err(err))
+			return
+		}
+	}(ctx)
 	<-ctx.Done()
 	return nil
 }

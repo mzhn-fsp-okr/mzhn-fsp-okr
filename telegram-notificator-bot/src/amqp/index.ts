@@ -1,12 +1,15 @@
 import amqp from "amqplib";
 import { get } from "../bot";
 
-import { formatMessage } from "./format_event";
+import { TelegramError } from "telegraf";
+import { formatNewEventMessage } from "./format-new-event";
+import { formatNewSubMessage, formatSportSubMessage } from "./format-new-sub";
+import { formatMessage as formatUpcomingMessage } from "./format-upcoming-event";
 
 type Message = {
   receiver: string;
   event: Event;
-  eventType: "upcoming" | "new";
+  type: "upcoming" | "new" | "new-sub";
 };
 
 type Event = {
@@ -33,21 +36,70 @@ export const setupAmqp = async (env: NodeJS.ProcessEnv) => {
     await conn.close();
   });
 
-  await ch.assertQueue(queue, { durable: true });
-  await ch.consume(
-    queue,
-    async (msg) => {
-      const text = msg.content.toString();
-      const body: Message = JSON.parse(text);
+  let isPaused = false;
 
-      const bot = get();
-      try {
-        console.log("sending message", body.receiver);
-        await bot.telegram.sendMessage(body.receiver, formatMessage(body.event), { parse_mode: "Markdown" });
-      } catch (error) {
+  await ch.assertQueue(queue, { durable: true });
+  const consume = async (msg) => {
+    const text = msg.content.toString();
+    const body: Message = JSON.parse(text);
+
+    const bot = get();
+    try {
+      console.log("sending message", body.receiver, body.type);
+      if (body.type == "upcoming") {
+        await bot.telegram.sendMessage(
+          body.receiver,
+          formatUpcomingMessage(body.event),
+          { parse_mode: "Markdown" }
+        );
+      } else if (body.type == "new-sub") {
+        await bot.telegram.sendMessage(
+          body.receiver,
+          body.event
+            ? formatNewSubMessage(body.event)
+            : // @ts-ignore
+              formatSportSubMessage(body.sport),
+          { parse_mode: "Markdown" }
+        );
+      } else if (body.type == "new") {
+        await bot.telegram.sendMessage(
+          body.receiver,
+          formatNewEventMessage(body.event),
+          { parse_mode: "Markdown" }
+        );
+      }
+
+      ch.ack(msg);
+    } catch (error) {
+      if (error instanceof TelegramError) {
+        if (error.code == 429 && !isPaused) {
+          const delay = Number(error.message.split("retry after")[1]);
+
+          console.log("rate limit reached, waiting", delay, "sec");
+          isPaused = true;
+
+          await ch.cancel("message-sender");
+
+          setTimeout(async () => {
+            console.log("resuming consumer...");
+            isPaused = false;
+            ch.consume(queue, consume, {
+              noAck: false,
+              consumerTag: "message-sender",
+            });
+          }, delay * 1000);
+        } else {
+          ch.nack(msg, false, true);
+          console.error("unexprected error telegram", error);
+        }
+      } else {
         console.error("error while sending message", error);
       }
-    },
-    { noAck: true }
-  );
+    }
+  };
+
+  ch.consume(queue, consume, {
+    noAck: false,
+    consumerTag: "message-sender",
+  });
 };
