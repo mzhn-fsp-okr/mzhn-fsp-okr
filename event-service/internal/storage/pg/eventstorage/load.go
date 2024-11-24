@@ -40,7 +40,7 @@ type sportSubtype struct {
 	sportTypeId string
 }
 
-func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.EventInfo, error) {
+func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.EventInfo, bool, error) {
 
 	fn := "EventStorage.Load"
 	log := s.l.With(sl.Method(fn))
@@ -48,14 +48,14 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		log.Error("failed acquire connection", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		log.Error("failed begin transaction", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 	defer func() {
 		if err != nil {
@@ -73,23 +73,29 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 	oldEvent, err := s.Find(ctx, in.EkpId)
 	if err != nil {
 		log.Error("failed find event", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if oldEvent != nil {
 		if err := s.unstale(ctx, oldEvent.Id); err != nil {
 			log.Error("failed unstale event", sl.Err(err))
-			return nil, fmt.Errorf("%s: %w", fn, err)
+			return nil, false, fmt.Errorf("%s: %w", fn, err)
 		}
 
-		return s.Find(ctx, oldEvent.Id)
+		event, err := s.Find(ctx, oldEvent.Id)
+		if err != nil {
+			log.Error("failed find event", sl.Err(err))
+			return nil, false, fmt.Errorf("%s: %w", fn, err)
+		}
+
+		return event, true, nil
 	}
 
 	var stId, sstId string
 	st, err := s.findSportType(ctx, in.SportType)
 	if err != nil {
 		log.Error("failed find sport type", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if st == nil {
@@ -98,14 +104,14 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 		stid, err := s.saveSportType(ctx, in.SportType)
 		if err != nil {
 			log.Error("failed save sport type", sl.Err(err))
-			return nil, fmt.Errorf("%s: %w", fn, err)
+			return nil, false, fmt.Errorf("%s: %w", fn, err)
 		}
 		stId = stid
 
 		sstid, err := s.saveSportSubtype(ctx, saveSportSubtype{name: in.SportSubtype, sportTypeId: stId})
 		if err != nil {
 			log.Error("failed save sport subtype", sl.Err(err))
-			return nil, fmt.Errorf("%s: %w", fn, err)
+			return nil, false, fmt.Errorf("%s: %w", fn, err)
 		}
 
 		sstId = sstid
@@ -115,7 +121,7 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 		sst, err := s.findSportSubtypeByName(ctx, stId, in.SportSubtype)
 		if err != nil {
 			log.Error("failed find sport subtype", sl.Err(err))
-			return nil, fmt.Errorf("%s: %w", fn, err)
+			return nil, false, fmt.Errorf("%s: %w", fn, err)
 		}
 
 		if sst == nil {
@@ -124,7 +130,7 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 			sstid, err := s.saveSportSubtype(ctx, saveSportSubtype{name: in.SportSubtype, sportTypeId: stId})
 			if err != nil {
 				log.Error("failed save sport subtype", sl.Err(err))
-				return nil, fmt.Errorf("%s: %w", fn, err)
+				return nil, false, fmt.Errorf("%s: %w", fn, err)
 			}
 			sstId = sstid
 		} else {
@@ -142,25 +148,31 @@ func (s *Storage) Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.E
 	})
 	if err != nil {
 		log.Error("failed save event", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if err := s.saveEventDate(ctx, eid, in.Dates); err != nil {
 		log.Error("failed save event dates", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if err := s.saveParticipantsRequirements(ctx, eid, in.ParticipantRequirements); err != nil {
 		log.Error("failed save participants requirements", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
 	if err := s.saveEventStaleInfo(ctx, eid, false); err != nil {
 		log.Error("failed save event stale info", sl.Err(err))
-		return nil, fmt.Errorf("%s: %w", fn, err)
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
 	}
 
-	return s.Find(ctx, eid)
+	event, err := s.Find(ctx, eid)
+	if err != nil {
+		log.Error("failed find event", sl.Err(err))
+		return nil, false, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return event, false, nil
 }
 
 func (s *Storage) findSportType(ctx context.Context, slug string) (*sportType, error) {

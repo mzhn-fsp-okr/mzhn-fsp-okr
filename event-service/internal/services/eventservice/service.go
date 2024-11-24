@@ -21,7 +21,7 @@ type EventManager interface {
 }
 
 type EventLoader interface {
-	Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.EventInfo, error)
+	Load(ctx context.Context, in *domain.EventLoadInfo) (*domain.EventInfo, bool, error)
 }
 
 type NotificationPublisher interface {
@@ -53,16 +53,18 @@ func (s *Service) Load(ctx context.Context, in *domain.EventLoadInfo) (string, e
 	log := s.l.With(sl.Method(fn))
 
 	log.Info("loading an event", slog.String("ekp", in.EkpId))
-	event, err := s.el.Load(ctx, in)
+	event, old, err := s.el.Load(ctx, in)
 	if err != nil {
 		log.Error("failed to load event", sl.Err(err))
 		return "", err
 	}
 
-	log.Info("notificating about a new event", slog.String("eventId", event.Id))
-	if err := s.notificationPublisher.Notification(ctx, event); err != nil {
-		log.Error("failed to publish notification", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", fn, err)
+	if !old {
+		log.Info("notificating about a new event", slog.String("eventId", event.Id))
+		if err := s.notificationPublisher.Notification(ctx, event); err != nil {
+			log.Error("failed to publish notification", sl.Err(err))
+			return "", fmt.Errorf("%s: %w", fn, err)
+		}
 	}
 
 	return event.Id, nil
