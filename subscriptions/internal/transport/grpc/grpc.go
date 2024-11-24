@@ -125,3 +125,14 @@ func (s *Server) NotifyUser(ctx context.Context, req *sspb.NotifyUserRequest) (*
 
 	return nil, nil
 }
+
+// SubscribeToEvent implements sspb.SubscriptionServiceServer.
+func (s *Server) SubscribeToEvent(ctx context.Context, req *sspb.SubscribeToEventRequest) (*emptypb.Empty, error) {
+	if _, err := s.ss.SubscribeToEvent(&domain.EventSubscription{
+		UserId: req.UserId, EventId: req.EventId,
+	}); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

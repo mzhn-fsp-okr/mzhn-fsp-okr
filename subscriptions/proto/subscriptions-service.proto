@@ -12,10 +12,15 @@ enum DaysLeft {
 }
 
 service SubscriptionService {
+    rpc SubscribeToEvent(SubscribeToEventRequest) returns (google.protobuf.Empty);
     rpc GetUsersSubscribedToSport(SubscriptionRequest) returns (stream SubscriptionResponse);
     rpc GetUsersSubscribedToEvent(SubscriptionRequest) returns (stream SubscriptionResponse);
     rpc GetUsersFromEventByDaysLeft(UsersEventByDaysRequest) returns (stream UsersEventByDaysResponse);
     rpc NotifyUser(NotifyUserRequest) returns (google.protobuf.Empty);
+}
+message SubscribeToEventRequest {
+    string userId = 1;
+    string eventId = 2;
 }
 
 message SubscriptionRequest {
