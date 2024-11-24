@@ -282,7 +282,7 @@ def process_pdf():
             and os.path.exists(cache.get("file_path", ""))
         ):
             logging.info("PDF не изменился с последнего скачивания.")
-            file_path = cache["file_path"]
+            file_path = cache.get("file_path")
 
             if not FORCE_PARSE:
                 return
